@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_run_test_set_wizard_form" model="ir.ui.view">
+        <field name="name">run.test.set.wizard.form</field>
+        <field name="model">run.test.set.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Importar Set de Pruebas DGII">
+                <group>
+                    <div class="alert alert-info" role="alert">
+                        <p><strong>Asistente de Importación del Set de Pruebas DGII (Excel → JSON → API interna)</strong></p>
+                        <p>
+                            Carga el archivo Excel/CSV oficial (25 filas), normaliza y valida los datos, genera el JSON canónico y lo envía a tu API interna (que firma y despacha a DGII).
+                        </p>
+                        <p>Las hojas ECF se envían; las hojas RFCE se registran únicamente para referencia (sin envío).</p>
+                        <p class="mt-2">
+                            <i class="fa fa-cog"/> <strong>Configurar API:</strong>
+                            Ir a <em>Configuración > Ajustes > e-CF Tests</em>
+                        </p>
+                    </div>
+                </group>
+                <group>
+                    <group>
+                        <field name="test_set_file" filename="filename"/>
+                        <field name="filename" invisible="1"/>
+                        <field name="test_set_name"/>
+                    </group>
+                    <group>
+                        <field name="send_to_api"/>
+                        <field name="batch_mode" invisible="not send_to_api"/>
+                        <field name="filter_tipo_ecf" invisible="not send_to_api or not batch_mode"/>
+                    </group>
+                </group>
+
+                <div class="alert alert-warning" role="alert" invisible="not send_to_api or not batch_mode">
+                    <h5>⚠️ Modo por Lotes Activado</h5>
+                    <p>
+                        Se procesarán TODOS los casos del Excel, pero solo se enviarán a la API los que coincidan con el filtro seleccionado.
+                        Los demás quedarán en estado "Payload Listo" para envío posterior.
+                    </p>
+                    <p class="mb-0">
+                        <strong>Flujo recomendado:</strong><br/>
+                        1. Importar con filtro "Todos" y envío DESACTIVADO<br/>
+                        2. Luego usar el botón "📤 Enviar por Tipo" en el Set creado<br/>
+                        3. Enviar tipo por tipo según necesidad
+                    </p>
+                </div>
+                <footer>
+                    <button name="run_tests" string="Importar Set de Pruebas" type="object" class="btn-primary"/>
+                    <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_run_test_set_wizard" model="ir.actions.act_window">
+        <field name="name">Ejecutar Set de Pruebas DGII</field>
+        <field name="res_model">run.test.set.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem
+        id="menu_run_test_set"
+        name="Importar Set de Pruebas"
+        parent="l10n_do_e_cf_core.menu_e_cf_config_root"
+        action="action_run_test_set_wizard"
+        sequence="5"
+    />
+</odoo>

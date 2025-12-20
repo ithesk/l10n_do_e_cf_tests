@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista List Simple para usar en One2many -->
+    <record id="view_ecf_test_rfce_case_tree_simple" model="ir.ui.view">
+        <field name="name">ecf.test.rfce.case.list.simple</field>
+        <field name="model">ecf.test.rfce.case</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state=='accepted'"
+                  decoration-danger="state=='rejected'"
+                  decoration-warning="state=='error'">
+                <field name="name"/>
+                <field name="periodo"/>
+                <field name="cantidad_comprobantes"/>
+                <field name="monto_total"/>
+                <field name="state"/>
+                <field name="track_id"/>
+            </list>
+        </field>
+    </record>
+</odoo>

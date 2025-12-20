@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+    Los proveedores de API deben ser creados manualmente por el usuario
+    desde: e-CF Tests > Proveedores de API
+
+    Ejemplos de configuración:
+
+    1. FirmaDGII API Local:
+       - Tipo: API Local
+       - URL: http://localhost:3000/api/invoice/send
+       - Auth: API Key (Header)
+       - Header: x-api-key
+       - Formato: Envuelto (invoiceData + metadata)
+
+    2. MSeller API:
+       - Tipo: MSeller API
+       - URL: https://ecf.api.mseller.app
+       - Auth: MSeller (Email/Password + API Key)
+    -->
+</odoo>

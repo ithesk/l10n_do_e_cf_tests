@@ -228,7 +228,6 @@ LGPL-3
 ## Autor
 
 - **ITHesk** - [https://www.ithesk.com](https://www.ithesk.com)
-- **Marsa Systems** - [https://www.marsasystems.com](https://www.marsasystems.com)
 
 ## Contribuciones
 

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Definición del Reporte -->
+    <record id="action_report_ecf_invoice" model="ir.actions.report">
+        <field name="name">Factura e-CF DGII</field>
+        <field name="model">ecf.test.case</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">l10n_do_e_cf_tests.report_ecf_invoice_document</field>
+        <field name="report_file">l10n_do_e_cf_tests.report_ecf_invoice_document</field>
+        <field name="print_report_name">'Factura_eCF_%s' % object.name</field>
+        <field name="binding_model_id" ref="model_ecf_test_case"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="base.paperformat_euro"/>
+    </record>
+</odoo>

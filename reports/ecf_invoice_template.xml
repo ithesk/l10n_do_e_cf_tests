@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Plantilla Principal del Reporte - Formato DGII -->
+    <template id="report_ecf_invoice_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <t t-set="ecf_data" t-value="o.get_ecf_data()"/>
+                    <t t-set="id_doc" t-value="ecf_data.get('id_doc', {})"/>
+                    <t t-set="emisor" t-value="ecf_data.get('emisor', {})"/>
+                    <t t-set="comprador" t-value="ecf_data.get('comprador', {})"/>
+                    <t t-set="totales" t-value="ecf_data.get('totales', {})"/>
+                    <t t-set="items" t-value="ecf_data.get('items', [])"/>
+                    <t t-set="qr_url" t-value="o.get_qr_dgii_url()"/>
+
+                    <div class="page">
+                        <!-- ============================================== -->
+                        <!-- ENCABEZADO: Emisor (izq) + e-NCF (der) -->
+                        <!-- ============================================== -->
+                        <div class="row mb-3">
+                            <!-- Datos del Emisor -->
+                            <div class="col-7">
+                                <div style="font-size: 11px;">
+                                    <!-- Nombre del Emisor -->
+                                    <strong style="font-size: 14px;"><t t-esc="emisor.get('RazonSocialEmisor', '')"/></strong><br/>
+                                    <!-- RNC del Emisor - JUSTO DEBAJO DEL NOMBRE -->
+                                    <strong>RNC:</strong> <t t-esc="emisor.get('RNCEmisor', '')"/><br/>
+                                    <!-- Nombre Comercial si existe -->
+                                    <t t-if="emisor.get('NombreComercial')">
+                                        <t t-esc="emisor.get('NombreComercial')"/><br/>
+                                    </t>
+                                    <!-- Dirección -->
+                                    <t t-if="emisor.get('DireccionEmisor')">
+                                        <t t-esc="emisor.get('DireccionEmisor')"/>
+                                        <t t-if="emisor.get('Municipio')">, <t t-esc="emisor.get('Municipio')"/></t>
+                                        <t t-if="emisor.get('Provincia')">, <t t-esc="emisor.get('Provincia')"/></t>
+                                        <br/>
+                                    </t>
+                                    <!-- Correo -->
+                                    <t t-if="emisor.get('CorreoEmisor')">
+                                        <t t-esc="emisor.get('CorreoEmisor')"/><br/>
+                                    </t>
+                                </div>
+                            </div>
+
+                            <!-- Tipo de Documento y e-NCF -->
+                            <div class="col-5 text-end">
+                                <div style="color: #0066CC; font-size: 11px; font-weight: bold;">
+                                    <t t-esc="o.get_tipo_ecf_name()"/>
+                                </div>
+                                <div style="color: #0066CC; font-size: 13px; font-weight: bold; margin-top: 3px;">
+                                    e-NCF: <t t-esc="id_doc.get('eNCF', '')"/>
+                                </div>
+                                <div style="font-size: 10px; margin-top: 3px;">
+                                    <t t-if="id_doc.get('FechaVencimientoSecuencia')">
+                                        <strong>Venc. Secuencia:</strong> <t t-esc="id_doc.get('FechaVencimientoSecuencia')"/>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ============================================== -->
+                        <!-- DATOS DEL COMPRADOR -->
+                        <!-- ============================================== -->
+                        <div class="row mb-3" style="background-color: #f8f9fa; padding: 8px; border-radius: 4px;">
+                            <div class="col-12">
+                                <table class="table table-sm table-borderless mb-0" style="font-size: 11px;">
+                                    <tr>
+                                        <td style="width: 50%;"><strong>Cliente:</strong> <t t-esc="comprador.get('RazonSocialComprador', 'Consumidor Final')"/></td>
+                                        <td style="width: 25%;"><strong>Fecha:</strong> <t t-esc="emisor.get('FechaEmision', '')"/></td>
+                                        <td style="width: 25%;">
+                                            <strong>Tipo Pago:</strong>
+                                            <t t-if="id_doc.get('TipoPago') == '1'">Contado</t>
+                                            <t t-elif="id_doc.get('TipoPago') == '2'">Crédito</t>
+                                            <t t-elif="id_doc.get('TipoPago') == '3'">Gratuito</t>
+                                            <t t-else=""><t t-esc="id_doc.get('TipoPago', '')"/></t>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <t t-if="comprador.get('RNCComprador')">
+                                                <strong>RNC/Cédula:</strong> <t t-esc="comprador.get('RNCComprador')"/>
+                                            </t>
+                                            <t t-if="comprador.get('IdentificadorExtranjero')">
+                                                <strong>ID Extranjero:</strong> <t t-esc="comprador.get('IdentificadorExtranjero')"/>
+                                            </t>
+                                        </td>
+                                        <td colspan="2">
+                                            <t t-if="comprador.get('DireccionComprador')">
+                                                <strong>Dirección:</strong> <t t-esc="comprador.get('DireccionComprador')"/>
+                                            </t>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- ============================================== -->
+                        <!-- TABLA DE ITEMS -->
+                        <!-- ============================================== -->
+                        <table class="table table-sm" style="font-size: 10px; border-collapse: collapse;">
+                            <thead style="background-color: #e9ecef;">
+                                <tr>
+                                    <th class="text-center" style="width: 5%; border: 1px solid #dee2e6;">Cant.</th>
+                                    <th class="text-start" style="width: 45%; border: 1px solid #dee2e6;">Descripción</th>
+                                    <th class="text-end" style="width: 15%; border: 1px solid #dee2e6;">Precio Unit.</th>
+                                    <th class="text-end" style="width: 15%; border: 1px solid #dee2e6;">ITBIS</th>
+                                    <th class="text-end" style="width: 20%; border: 1px solid #dee2e6;">Importe</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="items" t-as="item">
+                                    <tr>
+                                        <td class="text-center" style="border: 1px solid #dee2e6;">
+                                            <t t-esc="item.get('CantidadItem', 1)"/>
+                                        </td>
+                                        <td class="text-start" style="border: 1px solid #dee2e6;">
+                                            <t t-esc="item.get('NombreItem') or item.get('DescripcionItem') or 'Producto/Servicio'"/>
+                                            <t t-if="item.get('UnidadMedida')">
+                                                <small class="text-muted"> (<t t-esc="item.get('UnidadMedida')"/>)</small>
+                                            </t>
+                                        </td>
+                                        <td class="text-end" style="border: 1px solid #dee2e6;">
+                                            <t t-set="precio" t-value="item.get('PrecioUnitarioItem', 0)"/>
+                                            <t t-esc="'{:,.2f}'.format(float(precio or 0))"/>
+                                        </td>
+                                        <td class="text-end" style="border: 1px solid #dee2e6;">
+                                            <!--
+                                            ITBIS del item según IndicadorFacturacion:
+                                            1 = Gravado 18% (ITBIS1)
+                                            2 = Gravado 16% (ITBIS2)
+                                            3 = Exento
+                                            4 = Gravado 0% (ITBIS3)
+                                            El monto ITBIS = MontoItem * tasa correspondiente
+                                            -->
+                                            <t t-set="indicador" t-value="int(item.get('IndicadorFacturacion', 1) or 1)"/>
+                                            <t t-set="monto_item_val" t-value="float(item.get('MontoItem', 0) or 0)"/>
+                                            <t t-set="itbis_item" t-value="0.0"/>
+
+                                            <!-- Si hay MontoITBIS directo, usarlo -->
+                                            <t t-if="item.get('MontoITBIS')">
+                                                <t t-set="itbis_item" t-value="float(item.get('MontoITBIS'))"/>
+                                            </t>
+                                            <!-- Sino, calcular según indicador -->
+                                            <t t-elif="indicador == 1">
+                                                <!-- 18% ITBIS -->
+                                                <t t-set="itbis_item" t-value="monto_item_val * 0.18"/>
+                                            </t>
+                                            <t t-elif="indicador == 2">
+                                                <!-- 16% ITBIS -->
+                                                <t t-set="itbis_item" t-value="monto_item_val * 0.16"/>
+                                            </t>
+                                            <!-- indicador 3 o 4 = 0% -->
+
+                                            <t t-esc="'{:,.2f}'.format(itbis_item)"/>
+                                        </td>
+                                        <td class="text-end" style="border: 1px solid #dee2e6;">
+                                            <t t-set="monto_item" t-value="item.get('MontoItem', 0)"/>
+                                            <t t-esc="'{:,.2f}'.format(float(monto_item or 0))"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <!-- ============================================== -->
+                        <!-- TOTALES Y QR -->
+                        <!-- ============================================== -->
+                        <div class="row mt-3">
+                            <!-- QR Code DGII (Izquierda) -->
+                            <div class="col-5">
+                                <t t-if="qr_url">
+                                    <div class="text-center">
+                                        <!-- Generar QR usando endpoint de Odoo con el contenido de qr_url -->
+                                        <img t-att-src="'/report/barcode/QR/%s?width=130&amp;height=130' % qr_url"
+                                             style="width: 130px; height: 130px;" alt="QR Verificación DGII"/>
+                                        <div style="font-size: 9px; margin-top: 5px;">
+                                            <t t-if="o.security_code">
+                                                <strong>Código Seguridad:</strong> <t t-esc="o.security_code"/><br/>
+                                            </t>
+                                            <t t-if="ecf_data.get('fecha_hora_firma')">
+                                                <strong>Fecha Firma:</strong> <t t-esc="ecf_data.get('fecha_hora_firma')"/>
+                                            </t>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
+
+                            <!-- Tabla de Totales (Derecha) -->
+                            <div class="col-7">
+                                <table class="table table-sm" style="font-size: 11px; width: 100%;">
+                                    <!-- Subtotal Gravado -->
+                                    <t t-set="monto_gravado" t-value="float(totales.get('MontoGravadoTotal', 0) or totales.get('MontoGravadoI1', 0) or 0)"/>
+                                    <t t-if="monto_gravado">
+                                        <tr>
+                                            <td class="text-end border-0">Subtotal Gravado:</td>
+                                            <td class="text-end border-0" style="width: 30%;">
+                                                <t t-esc="'{:,.2f}'.format(monto_gravado)"/>
+                                            </td>
+                                        </tr>
+                                    </t>
+
+                                    <!-- Monto Exento -->
+                                    <t t-set="monto_exento" t-value="float(totales.get('MontoExento', 0) or 0)"/>
+                                    <t t-if="monto_exento">
+                                        <tr>
+                                            <td class="text-end border-0">Monto Exento:</td>
+                                            <td class="text-end border-0">
+                                                <t t-esc="'{:,.2f}'.format(monto_exento)"/>
+                                            </td>
+                                        </tr>
+                                    </t>
+
+                                    <!-- Total ITBIS -->
+                                    <t t-set="total_itbis" t-value="float(totales.get('TotalITBIS', 0) or totales.get('TotalITBIS1', 0) or 0)"/>
+                                    <tr>
+                                        <td class="text-end border-0">Total ITBIS (18%):</td>
+                                        <td class="text-end border-0">
+                                            <t t-esc="'{:,.2f}'.format(total_itbis)"/>
+                                        </td>
+                                    </tr>
+
+                                    <!-- TOTAL -->
+                                    <t t-set="monto_total_val" t-value="float(totales.get('MontoTotal', 0) or 0)"/>
+                                    <tr style="border-top: 2px solid #000; font-weight: bold; font-size: 13px;">
+                                        <td class="text-end border-0 pt-2">TOTAL RD$:</td>
+                                        <td class="text-end border-0 pt-2">
+                                            <t t-esc="'{:,.2f}'.format(monto_total_val)"/>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- ============================================== -->
+                        <!-- PIE DE PÁGINA -->
+                        <!-- ============================================== -->
+                        <div class="mt-4 pt-2 border-top text-center" style="font-size: 9px; color: #666;">
+                            <p class="mb-0">
+                                Representación Impresa del Comprobante Fiscal Electrónico (e-CF)
+                            </p>
+                            <p class="mb-0">
+                                Consulte la validez de este documento en: <strong>www.dgii.gov.do</strong>
+                            </p>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

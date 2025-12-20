@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="send_ecf_by_type_wizard_form" model="ir.ui.view">
+        <field name="name">send.ecf.by.type.wizard.form</field>
+        <field name="model">send.ecf.by.type.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Enviar e-CF por Tipo">
+                <group>
+                    <group>
+                        <field name="test_set_id" readonly="1"/>
+                        <field name="filter_tipo_ecf"/>
+                        <field name="only_failed"/>
+                    </group>
+                    <group>
+                        <field name="ready_count" string="Listos para Enviar"/>
+                        <field name="failed_count" string="Fallidos/Rechazados" invisible="not only_failed"/>
+                    </group>
+                </group>
+
+                <div class="alert alert-info" role="alert">
+                    <h5>ℹ️ Envío por Lotes (Batch Mode)</h5>
+                    <p>
+                        <strong>Ventajas del envío por tipo:</strong>
+                    </p>
+                    <ul>
+                        <li>✅ <strong>Sin pérdida de progreso:</strong> Si algo falla, solo se pierde el tipo actual</li>
+                        <li>✅ <strong>Control granular:</strong> Enviar tipo 31, luego 32, etc.</li>
+                        <li>✅ <strong>Orden DGII respetado:</strong> Automático dentro de cada tipo</li>
+                        <li>✅ <strong>Reenvío fácil:</strong> Reintentar solo los fallidos</li>
+                    </ul>
+                    <p class="mb-0">
+                        <strong>Flujo recomendado:</strong><br/>
+                        1. Enviar tipo 31 (Crédito Fiscal)<br/>
+                        2. Enviar tipo 32 (Consumo)<br/>
+                        3. Enviar tipos 33, 34 (Notas)<br/>
+                        4. Enviar otros tipos (41, 43-47)<br/>
+                        5. Reenviar fallidos si hay errores
+                    </p>
+                </div>
+
+                <footer>
+                    <button name="action_send" type="object" string="Enviar Seleccionados" class="btn-primary"/>
+                    <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

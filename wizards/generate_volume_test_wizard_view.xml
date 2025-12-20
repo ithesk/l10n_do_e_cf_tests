@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista de Formulario del Wizard -->
+    <record id="view_generate_volume_test_wizard_form" model="ir.ui.view">
+        <field name="name">generate.volume.test.wizard.form</field>
+        <field name="model">generate.volume.test.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Generar Casos de Volumen">
+                <group>
+                    <group string="Plantilla">
+                        <field name="test_set_id" readonly="1"/>
+                        <field name="template_case_id"
+                               options="{'no_create': True}"
+                               placeholder="Seleccione un caso como plantilla..."/>
+                    </group>
+                    <group string="Rango de Secuencias">
+                        <field name="sequence_start"/>
+                        <field name="sequence_end"/>
+                        <field name="quantity" readonly="1"
+                               decoration-success="quantity > 0"
+                               decoration-danger="quantity == 0"/>
+                    </group>
+                </group>
+                <group>
+                    <group>
+                        <field name="auto_send"/>
+                    </group>
+                </group>
+                <group>
+                    <div class="alert alert-info" role="alert">
+                        <p class="mb-1">
+                            <strong>Ejemplo:</strong> Para generar 3 casos con secuencias 88, 89 y 90:
+                        </p>
+                        <ul class="mb-1">
+                            <li>Secuencia Inicial: <strong>88</strong></li>
+                            <li>Secuencia Final: <strong>90</strong></li>
+                        </ul>
+                        <p class="mb-0">
+                            <strong>Formato eNCF:</strong> E + Tipo (2 dígitos) + Secuencia (10 dígitos)
+                            <br/>
+                            <em>Ej: E470000000088, E470000000089, E470000000090</em>
+                        </p>
+                    </div>
+                </group>
+                <footer>
+                    <button name="action_generate" type="object"
+                            string="📋 Generar Casos" class="btn-primary"
+                            invisible="not template_case_id or quantity &lt;= 0"/>
+                    <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

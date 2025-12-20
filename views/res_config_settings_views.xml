@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Heredar vista de configuración para agregar sección de e-CF Tests -->
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.ecf.tests</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app string="e-CF Tests" name="l10n_do_e_cf_tests">
+
+                    <!-- Selección de API a usar -->
+                    <block title="Configuración de API para Envío de e-CF" name="api_selection">
+                        <setting string="API a Utilizar"
+                                 help="Seleccione qué API usar para enviar los comprobantes electrónicos a la DGII">
+                            <field name="ecf_test_use_mseller"/>
+                            <div class="text-muted">
+                                Si está activado, se usará MSeller API (recomendado - script probado al 100%).
+                                Si no, se usará la API interna configurada abajo.
+                            </div>
+                        </setting>
+                    </block>
+
+                    <!-- Configuración MSeller API -->
+                    <block title="MSeller API (Script Probado al 100%)"
+                           name="mseller_config"
+                           invisible="not ecf_test_use_mseller">
+                        <setting string="Host MSeller">
+                            <field name="mseller_host" placeholder="https://ecf.api.mseller.app"/>
+                        </setting>
+
+                        <setting string="Ambiente MSeller">
+                            <field name="mseller_env"/>
+                            <div class="text-muted">
+                                <ul class="mb-0">
+                                    <li><strong>TesteCF:</strong> Ambiente de pruebas (no envía a DGII)</li>
+                                    <li><strong>CerteCF:</strong> Ambiente de certificación DGII</li>
+                                    <li><strong>eCF:</strong> Producción (envío real a DGII)</li>
+                                </ul>
+                            </div>
+                        </setting>
+
+                        <setting string="Credenciales MSeller">
+                            <div class="row mt16">
+                                <label for="mseller_email" class="col-lg-3 o_light_label" string="Email"/>
+                                <field name="mseller_email" placeholder="usuario@ejemplo.com"/>
+                            </div>
+                            <div class="row mt8">
+                                <label for="mseller_password" class="col-lg-3 o_light_label" string="Password"/>
+                                <field name="mseller_password" password="True" placeholder="contraseña"/>
+                            </div>
+                            <div class="row mt8">
+                                <label for="mseller_api_key" class="col-lg-3 o_light_label" string="API Key"/>
+                                <field name="mseller_api_key" password="True" placeholder="X-API-KEY"/>
+                            </div>
+                        </setting>
+
+                        <setting string="Timeout MSeller (segundos)">
+                            <field name="mseller_timeout"/>
+                        </setting>
+                    </block>
+
+                    <!-- Configuración API Interna (Opcional) -->
+                    <block title="API Interna (Opcional - Compatibilidad)"
+                           name="api_internal_config"
+                           invisible="ecf_test_use_mseller">
+                        <setting string="URL de la API Interna"
+                                 help="Endpoint para envío de e-CF (JSON → XML + firma + envío)">
+                            <field name="ecf_test_api_url" placeholder="https://api.ejemplo.com/ecf/submit"/>
+                        </setting>
+
+                        <setting string="Token de Autenticación"
+                                 help="Bearer token para autenticación con la API">
+                            <field name="ecf_test_api_token" password="True" placeholder="your-api-token-here"/>
+                        </setting>
+
+                        <setting string="Timeout API Interna (segundos)">
+                            <field name="ecf_test_api_timeout"/>
+                        </setting>
+                    </block>
+
+                    <!-- Configuración General -->
+                    <block title="Configuración General" name="general_config">
+                        <setting string="Logging Detallado"
+                                 help="Guarda el request y response completo de cada llamada (recomendado para debugging)">
+                            <field name="ecf_test_enable_debug_log"/>
+                        </setting>
+                    </block>
+
+                    <!-- Información -->
+                    <block title="Información" name="info">
+                        <div class="text-muted">
+                            <p>
+                                <strong>Configuración de API para Pruebas e-CF DGII</strong>
+                            </p>
+                            <h5>MSeller API (Recomendado)</h5>
+                            <ul>
+                                <li>Usa el script probado al 100% con la DGII</li>
+                                <li>Ordenamiento automático según requisitos DGII</li>
+                                <li>Construcción de JSON exacta del script funcional</li>
+                                <li>Autenticación y envío directo a MSeller</li>
+                            </ul>
+                            <h5>API Interna (Opcional)</h5>
+                            <ul>
+                                <li>Para usar su propia API de envío personalizada</li>
+                                <li>El token se envía como Bearer en el header Authorization</li>
+                                <li>Compatible con el módulo anterior</li>
+                            </ul>
+                            <h5>Logs y Trazabilidad</h5>
+                            <ul>
+                                <li>Todos los envíos generan logs detallados para trazabilidad</li>
+                                <li>Ver logs en: e-CF Tests > Logs de API</li>
+                            </ul>
+                        </div>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+</odoo>

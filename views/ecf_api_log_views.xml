@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista List de Logs de API -->
+    <record id="view_ecf_api_log_tree" model="ir.ui.view">
+        <field name="name">ecf.api.log.list</field>
+        <field name="model">ecf.api.log</field>
+        <field name="arch" type="xml">
+            <list string="Logs de API e-CF" default_order="create_date desc">
+                <field name="request_timestamp" string="Fecha/Hora"/>
+                <field name="origin" optional="show"/>
+                <field name="provider_name" string="Proveedor"/>
+                <field name="encf" string="eNCF"/>
+                <field name="tipo_ecf" string="Tipo" optional="show"/>
+                <field name="rnc_emisor" string="RNC" optional="hide"/>
+                <field name="response_status_code" string="HTTP"/>
+                <field name="api_status" string="Estado"
+                       decoration-success="api_status in ('success', 'accepted')"
+                       decoration-danger="api_status in ('error', 'rejected', 'timeout', 'connection_error')"
+                       decoration-warning="api_status == 'pending'"/>
+                <field name="track_id" optional="show"/>
+                <field name="response_time_ms" string="Tiempo (ms)" optional="show"/>
+                <field name="has_signed_xml" string="XML" optional="show"/>
+                <field name="dgii_validation_url" string="Validación" widget="url" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vista Form de Logs de API -->
+    <record id="view_ecf_api_log_form" model="ir.ui.view">
+        <field name="name">ecf.api.log.form</field>
+        <field name="model">ecf.api.log</field>
+        <field name="arch" type="xml">
+            <form string="Log API e-CF">
+                <header>
+                    <button name="action_view_origin" type="object" string="Ver Origen"
+                            class="oe_highlight"
+                            invisible="not test_case_id and not simulation_doc_id"/>
+                    <button name="action_download_request" type="object" string="Descargar Request"
+                            icon="fa-download" invisible="not request_payload"/>
+                    <button name="action_download_response" type="object" string="Descargar Response"
+                            icon="fa-download" invisible="not response_body"/>
+                    <button name="action_download_signed_xml" type="object"
+                            icon="fa-download" class="btn-success"
+                            string="Descargar XML RFCE" invisible="not is_rfce or not signed_xml"/>
+                    <button name="action_download_signed_xml" type="object"
+                            icon="fa-download" class="btn-success"
+                            string="Descargar XML Firmado" invisible="is_rfce or not signed_xml"/>
+                    <button name="action_download_signed_xml_ecf" type="object"
+                            icon="fa-download" class="btn-primary"
+                            string="Descargar XML ECF Completo" invisible="not signed_xml_ecf"/>
+                    <field name="api_status" widget="statusbar"
+                           statusbar_visible="pending,success,accepted,rejected,error"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Origen">
+                            <field name="origin"/>
+                            <field name="provider_id"/>
+                            <field name="provider_name" invisible="provider_id"/>
+                            <field name="provider_type" invisible="1"/>
+                            <field name="test_case_id" invisible="not test_case_id"/>
+                            <field name="simulation_doc_id" invisible="not simulation_doc_id"/>
+                        </group>
+                        <group string="Documento e-CF">
+                            <field name="encf"/>
+                            <field name="tipo_ecf"/>
+                            <field name="rnc_emisor"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Tiempos">
+                            <field name="request_timestamp"/>
+                            <field name="response_timestamp"/>
+                            <field name="response_time_ms" string="Tiempo respuesta (ms)"/>
+                        </group>
+                        <group string="Resultado">
+                            <field name="response_status_code"/>
+                            <field name="success"/>
+                            <field name="connection_success"/>
+                            <field name="track_id"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Request (Envío)" name="request">
+                            <group string="URL y Headers">
+                                <field name="request_url" string="URL"/>
+                                <field name="request_method"/>
+                                <field name="request_headers" widget="text"/>
+                            </group>
+                            <group string="Payload Enviado">
+                                <field name="request_payload_formatted" widget="text" nolabel="1"
+                                       class="o_field_text_mono"/>
+                            </group>
+                        </page>
+                        <page string="Response (Respuesta)" name="response">
+                            <group string="Headers de Respuesta" invisible="not response_headers">
+                                <field name="response_headers" widget="text"/>
+                            </group>
+                            <group string="Respuesta JSON Parseada" invisible="not response_json">
+                                <field name="response_json" widget="text" nolabel="1"
+                                       class="o_field_text_mono"/>
+                            </group>
+                            <group string="Respuesta Completa (Raw)">
+                                <field name="response_body_formatted" widget="text" nolabel="1"
+                                       class="o_field_text_mono"/>
+                            </group>
+                        </page>
+                        <page string="XML Firmado" name="signed_xml" invisible="not signed_xml">
+                            <div class="alert alert-success mb-3" role="alert" invisible="not is_rfce">
+                                <strong>Documento RFCE</strong> - Este documento fue enviado como Resumen de Factura de Consumo (consumo &lt; 250k).
+                                Se muestran ambos XMLs: el RFCE enviado a DGII y el ECF completo para archivo.
+                            </div>
+                            <div class="alert alert-success mb-3" role="alert" invisible="is_rfce">
+                                <strong>XML Firmado disponible</strong> - Use el botón "Descargar XML Firmado" para obtener el archivo.
+                            </div>
+                            <group string="XML RFCE (Resumen enviado a DGII)" invisible="not is_rfce">
+                                <field name="signed_xml" widget="text" nolabel="1"
+                                       class="o_field_text_mono"/>
+                            </group>
+                            <group string="XML ECF Completo (para archivo interno)" invisible="not signed_xml_ecf">
+                                <field name="signed_xml_ecf" widget="text" nolabel="1"
+                                       class="o_field_text_mono"/>
+                            </group>
+                            <group invisible="is_rfce">
+                                <field name="signed_xml" widget="text" nolabel="1"
+                                       class="o_field_text_mono"/>
+                            </group>
+                        </page>
+                        <page string="Validación DGII" name="dgii_validation" invisible="not signed_xml">
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <button name="action_extract_xml_data" type="object"
+                                            string="Extraer/Recalcular Datos del XML" class="btn btn-secondary me-2"
+                                            icon="fa-refresh"/>
+                                    <button name="action_open_validation_url" type="object"
+                                            string="Abrir URL Validación DGII" class="btn btn-primary"
+                                            icon="fa-external-link"
+                                            invisible="not dgii_validation_url"/>
+                                </div>
+                            </div>
+                            <group>
+                                <group string="Datos Extraídos del XML">
+                                    <field name="xml_rnc_emisor" readonly="1"/>
+                                    <field name="xml_rnc_comprador" readonly="1"/>
+                                    <field name="xml_encf" readonly="1"/>
+                                    <field name="xml_fecha_emision" readonly="1"/>
+                                    <field name="xml_monto_total" readonly="1"/>
+                                    <field name="xml_fecha_firma" readonly="1"/>
+                                    <field name="xml_security_code" readonly="1"/>
+                                    <field name="ecf_security_code" readonly="1" invisible="not is_rfce"
+                                           string="Código Seguridad ECF (para URL)"/>
+                                </group>
+                                <group string="URL de Validación">
+                                    <field name="dgii_validation_url" widget="url" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Errores" name="errors" invisible="not error_message and not dgii_message">
+                            <group>
+                                <field name="error_message"/>
+                                <field name="dgii_message"/>
+                                <field name="dgii_code"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista Search -->
+    <record id="view_ecf_api_log_search" model="ir.ui.view">
+        <field name="name">ecf.api.log.search</field>
+        <field name="model">ecf.api.log</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Logs API">
+                <field name="encf"/>
+                <field name="rnc_emisor"/>
+                <field name="track_id"/>
+                <field name="provider_name"/>
+                <separator/>
+                <filter name="filter_success" string="Exitosos"
+                        domain="[('success', '=', True)]"/>
+                <filter name="filter_error" string="Con Errores"
+                        domain="[('success', '=', False), ('api_status', '!=', 'pending')]"/>
+                <filter name="filter_pending" string="Pendientes"
+                        domain="[('api_status', '=', 'pending')]"/>
+                <separator/>
+                <filter name="filter_has_xml" string="Con XML Firmado"
+                        domain="[('has_signed_xml', '=', True)]"/>
+                <separator/>
+                <filter name="group_origin" string="Origen" context="{'group_by': 'origin'}"/>
+                <filter name="group_provider" string="Proveedor" context="{'group_by': 'provider_id'}"/>
+                <filter name="group_status" string="Estado" context="{'group_by': 'api_status'}"/>
+                <filter name="group_tipo" string="Tipo e-CF" context="{'group_by': 'tipo_ecf'}"/>
+                <filter name="group_date" string="Fecha" context="{'group_by': 'request_timestamp'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Acción para abrir logs -->
+    <record id="action_ecf_api_log" model="ir.actions.act_window">
+        <field name="name">Log de Transacciones API</field>
+        <field name="res_model">ecf.api.log</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_ecf_api_log_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay logs de API registrados
+            </p>
+            <p>
+                Los logs se crean automáticamente cuando envías documentos e-CF
+                desde el Simulador de Documentos o Set de Pruebas.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menú para logs -->
+    <menuitem id="menu_ecf_api_log"
+              name="Log de Transacciones"
+              parent="l10n_do_e_cf_core.menu_e_cf_config_root"
+              action="action_ecf_api_log"
+              sequence="15"/>
+</odoo>

@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Acción para abrir la vista (debe ir primero) -->
+    <record id="action_ecf_simulation_document" model="ir.actions.act_window">
+        <field name="name">Simulador de Documentos e-CF</field>
+        <field name="res_model">ecf.simulation.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crear un nuevo documento de simulacion e-CF
+            </p>
+            <p>
+                Use este simulador para crear documentos e-CF manualmente,
+                generar el JSON, enviarlo a la API y obtener la representacion impresa.
+            </p>
+        </field>
+    </record>
+
+    <!-- Vista de Lista -->
+    <record id="view_ecf_simulation_document_list" model="ir.ui.view">
+        <field name="name">ecf.simulation.document.list</field>
+        <field name="model">ecf.simulation.document</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state=='accepted'"
+                  decoration-danger="state in ('rejected', 'error')"
+                  decoration-info="state=='sent'"
+                  decoration-warning="state=='json_ready'">
+                <field name="name"/>
+                <field name="tipo_ecf"/>
+                <field name="encf_generated"/>
+                <field name="receptor_nombre"/>
+                <field name="monto_total"/>
+                <field name="state"/>
+                <field name="track_id"/>
+                <field name="create_date"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vista de Formulario del Documento de Simulacion -->
+    <record id="view_ecf_simulation_document_form" model="ir.ui.view">
+        <field name="name">ecf.simulation.document.form</field>
+        <field name="model">ecf.simulation.document</field>
+        <field name="arch" type="xml">
+            <form string="Simulador de Documentos e-CF">
+                <header>
+                    <button name="action_load_template" type="object"
+                            string="Cargar Plantilla" class="btn-secondary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_generate_json" type="object"
+                            string="Generar JSON" class="btn-info"
+                            invisible="state not in ('draft', 'json_ready')"/>
+                    <button name="action_generate_and_send" type="object"
+                            string="Enviar a API" class="btn-success"
+                            invisible="state == 'accepted'"
+                            confirm="Enviar este documento a la API seleccionada?"/>
+                    <button name="action_create_case" type="object"
+                            string="Crear Caso" class="btn-primary"
+                            invisible="state == 'draft' or created_case_id != False"/>
+                    <button name="action_print_invoice" type="object"
+                            string="Imprimir Factura" class="btn-warning"
+                            invisible="state not in ('accepted', 'sent', 'json_ready')"/>
+                    <button name="action_reset_to_draft" type="object"
+                            string="Resetear" class="btn-secondary"
+                            invisible="state == 'draft'"
+                            confirm="Resetear el documento a borrador? Se perdera el JSON y respuesta API."/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,json_ready,sent,accepted"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Nombre del documento..."/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <!-- Tipo de Documento y eNCF -->
+                        <group string="Tipo de Documento">
+                            <field name="tipo_ecf"/>
+                            <field name="test_set_id" options="{'no_create': True}"/>
+                            <field name="encf_mode" widget="radio" options="{'horizontal': true}"/>
+                            <field name="encf_manual" invisible="encf_mode != 'manual'"
+                                   placeholder="E310000000001"/>
+                            <field name="encf_generated" invisible="encf_mode != 'auto'"/>
+                            <field name="fecha_vencimiento_secuencia"/>
+                            <field name="api_provider_id"
+                                   options="{'no_create': True}"
+                                   placeholder="Proveedor por defecto"/>
+                        </group>
+
+                        <!-- Datos del Emisor -->
+                        <group string="Datos del Emisor (de tu Compania)">
+                            <field name="rnc_emisor"/>
+                            <field name="razon_social_emisor"/>
+                            <field name="nombre_comercial"/>
+                            <field name="direccion_emisor"/>
+                            <field name="municipio_emisor"/>
+                            <field name="provincia_emisor"/>
+                            <field name="telefono_emisor"/>
+                            <field name="correo_emisor"/>
+                            <field name="website_emisor"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <!-- Pestana: Comprador/Receptor -->
+                        <page string="Comprador / Receptor" name="comprador">
+                            <group>
+                                <group string="Identificacion">
+                                    <field name="receptor_rnc" placeholder="RNC o Cedula"/>
+                                    <field name="receptor_nombre" placeholder="Razon Social o Nombre"/>
+                                    <field name="identificador_extranjero"
+                                           invisible="not show_extranjero_fields"
+                                           placeholder="ID Extranjero"/>
+                                </group>
+                                <group string="Contacto">
+                                    <field name="receptor_direccion"/>
+                                    <field name="receptor_municipio"/>
+                                    <field name="receptor_provincia"/>
+                                    <field name="receptor_correo"/>
+                                </group>
+                            </group>
+
+                            <group string="Informacion del Comprobante">
+                                <group>
+                                    <field name="fecha_emision"/>
+                                    <field name="tipo_ingreso"/>
+                                    <field name="tipo_pago"/>
+                                </group>
+                                <group>
+                                    <field name="moneda"/>
+                                    <field name="forma_pago_1"/>
+                                    <field name="monto_pago_1"/>
+                                </group>
+                            </group>
+
+                            <!-- Campos auxiliares ocultos para control de visibilidad -->
+                            <field name="show_nc_nd_fields" invisible="1"/>
+                            <field name="show_extranjero_fields" invisible="1"/>
+                            <field name="show_retencion_fields" invisible="1"/>
+                            <field name="show_transporte_fields" invisible="1"/>
+                            <field name="show_otra_moneda_fields" invisible="1"/>
+                        </page>
+
+                        <!-- Pestana: Items / Lineas -->
+                        <page string="Items / Lineas" name="items">
+                            <field name="item_ids" nolabel="1">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="numero_linea" readonly="1" string="#"/>
+                                    <field name="nombre_item"/>
+                                    <field name="cantidad_item"/>
+                                    <field name="unidad_medida"/>
+                                    <field name="precio_unitario_item"/>
+                                    <field name="descuento_monto" optional="hide"/>
+                                    <field name="indicador_facturacion"/>
+                                    <field name="indicador_bien_servicio"/>
+                                    <field name="monto_item" readonly="1" sum="Total Items"/>
+                                    <field name="itbis_item" readonly="1" sum="Total ITBIS"/>
+                                    <field name="indicador_agente_retencion" optional="hide"/>
+                                    <field name="monto_itbis_retenido" optional="hide"/>
+                                    <field name="monto_isr_retenido" optional="hide"/>
+                                </list>
+                            </field>
+
+                            <!-- Resumen de Totales -->
+                            <group class="oe_subtotal_footer">
+                                <field name="monto_gravado_total" class="oe_subtotal_footer_separator"/>
+                                <field name="monto_exento"/>
+                                <field name="total_itbis" class="oe_subtotal_footer_separator"/>
+                                <field name="monto_total" class="oe_subtotal_footer_separator oe_right"/>
+                            </group>
+                        </page>
+
+                        <!-- Pestana: Totales Detallados -->
+                        <page string="Totales Detallados" name="totales">
+                            <group>
+                                <group string="Montos Gravados">
+                                    <field name="monto_gravado_i1" string="Gravado ITBIS 18%"/>
+                                    <field name="monto_gravado_i2" string="Gravado ITBIS 16%"/>
+                                    <field name="monto_gravado_i3" string="Gravado ITBIS 0%"/>
+                                    <field name="monto_gravado_total"/>
+                                    <field name="monto_exento"/>
+                                </group>
+                                <group string="ITBIS">
+                                    <field name="total_itbis1" string="ITBIS 18%"/>
+                                    <field name="total_itbis2" string="ITBIS 16%"/>
+                                    <field name="total_itbis3" string="ITBIS 0%"/>
+                                    <field name="total_itbis"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="Total Final">
+                                    <field name="monto_total"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- Pestana: NC/ND (solo para tipos 33, 34) -->
+                        <page string="Referencia NC/ND" name="nc_nd"
+                              invisible="not show_nc_nd_fields">
+                            <group>
+                                <group string="Documento Modificado">
+                                    <field name="ncf_modificado" placeholder="E310000000001"/>
+                                    <field name="fecha_ncf_modificado"/>
+                                    <field name="codigo_modificacion"/>
+                                </group>
+                                <group string="Indicadores" invisible="tipo_ecf != '34'">
+                                    <field name="indicador_nota_credito"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- Pestana: Retenciones (tipos 41, 47) -->
+                        <page string="Retenciones" name="retenciones"
+                              invisible="not show_retencion_fields">
+                            <group>
+                                <group string="Totales Retenidos">
+                                    <field name="total_itbis_retenido"/>
+                                    <field name="total_isr_retencion"/>
+                                </group>
+                            </group>
+                            <div class="alert alert-info">
+                                <strong>Nota:</strong> Las retenciones por item se configuran en la pestana "Items / Lineas" usando las columnas opcionales.
+                            </div>
+                        </page>
+
+                        <!-- Pestana: Transporte (tipos 44, 45, 46, 47) -->
+                        <page string="Transporte" name="transporte"
+                              invisible="not show_transporte_fields">
+                            <group>
+                                <group string="Datos de Transporte">
+                                    <field name="conductor"/>
+                                    <field name="documento_transporte"/>
+                                    <field name="placa"/>
+                                    <field name="ruta_transporte"/>
+                                </group>
+                                <group string="Origen/Destino">
+                                    <field name="pais_origen"/>
+                                    <field name="pais_destino"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- Pestana: Otra Moneda (tipo 45) -->
+                        <page string="Otra Moneda" name="otra_moneda"
+                              invisible="not show_otra_moneda_fields">
+                            <group>
+                                <group string="Conversion de Moneda">
+                                    <field name="tipo_moneda_otra"/>
+                                    <field name="tipo_cambio"/>
+                                    <field name="monto_total_otra_moneda"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- Pestana: JSON Preview -->
+                        <page string="JSON Preview" name="json_preview">
+                            <field name="json_preview" nolabel="1"
+                                   placeholder="Haga clic en 'Generar JSON' para generar el JSON del documento..."
+                                   class="o_field_text_mono"/>
+                        </page>
+
+                        <!-- Pestana: Resultado API -->
+                        <page string="Resultado API" name="api_result"
+                              invisible="state in ('draft', 'json_ready')">
+                            <group>
+                                <group string="Respuesta DGII">
+                                    <field name="track_id"/>
+                                    <field name="qr_url"/>
+                                    <field name="security_code"/>
+                                </group>
+                                <group string="Estado">
+                                    <field name="error_message" invisible="not error_message"/>
+                                </group>
+                            </group>
+                            <group string="Respuesta API (JSON)">
+                                <field name="api_response" nolabel="1"
+                                       class="o_field_text_mono"/>
+                            </group>
+                            <group string="Respuesta Completa (Raw)" invisible="not api_response_raw">
+                                <field name="api_response_raw" nolabel="1"
+                                       class="o_field_text_mono"/>
+                            </group>
+                            <group string="XML Firmado" invisible="not signed_xml">
+                                <div class="d-flex gap-2 mb-2">
+                                    <button name="action_download_signed_xml" type="object"
+                                            string="Descargar XML" class="btn-primary"
+                                            icon="fa-download" invisible="not signed_xml"/>
+                                    <button name="action_copy_signed_xml" type="object"
+                                            string="Copiar XML" class="btn-secondary"
+                                            icon="fa-copy" invisible="not signed_xml"/>
+                                </div>
+                                <field name="signed_xml" nolabel="1"
+                                       class="o_field_text_mono"/>
+                            </group>
+                            <group string="Caso Creado" invisible="not created_case_id">
+                                <field name="created_case_id"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Menu para acceder al simulador -->
+    <menuitem id="menu_ecf_simulation_document"
+              name="Simulador de Documentos"
+              parent="l10n_do_e_cf_core.menu_e_cf_config_root"
+              action="action_ecf_simulation_document"
+              sequence="5"/>
+
+</odoo>

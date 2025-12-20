@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista de Formulario del Resumen de Consumo -->
+    <record id="view_e_cf_consumo_resumen_form" model="ir.ui.view">
+        <field name="name">e.cf.consumo.resumen.form</field>
+        <field name="model">e.cf.consumo.resumen</field>
+        <field name="arch" type="xml">
+            <form string="Resumen de Facturas de Consumo (RFCE)">
+                <header>
+                    <button name="action_generate_xml" string="Generar XML" type="object"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_send_to_dgii" string="Enviar a DGII" type="object"
+                            class="btn-primary" invisible="state not in ('generated', 'error')"/>
+                    <button name="action_check_status" string="Consultar Estado" type="object"
+                            class="btn-secondary" invisible="state != 'sent'"/>
+                    <button name="action_export_xml_facturas" string="Exportar XML Facturas" type="object"
+                            class="btn-info" invisible="state != 'accepted'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Nombre del Resumen"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="company_id" readonly="1"/>
+                            <field name="periodo" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="fecha_desde"/>
+                            <field name="fecha_hasta"/>
+                        </group>
+                    </group>
+
+                    <group string="Totales del Resumen">
+                        <group>
+                            <field name="cantidad_comprobantes"/>
+                            <field name="monto_gravado"/>
+                        </group>
+                        <group>
+                            <field name="total_itbis"/>
+                            <field name="monto_exento"/>
+                            <field name="monto_total"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Facturas Incluidas" name="invoices">
+                            <field name="invoice_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="partner_id"/>
+                                    <field name="invoice_date"/>
+                                    <field name="amount_total"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <page string="XML Generado" name="xml" invisible="state not in ('generated', 'sent', 'accepted', 'rejected')">
+                            <group>
+                                <field name="xml_filename" readonly="1"/>
+                                <field name="xml_file" filename="xml_filename" readonly="1"/>
+                            </group>
+                            <field name="xml_payload" widget="ace" options="{'mode': 'xml'}" readonly="1"/>
+                        </page>
+
+                        <page string="Respuesta DGII" name="dgii" invisible="state not in ('sent', 'accepted', 'rejected', 'error')">
+                            <group>
+                                <field name="track_id" readonly="1"/>
+                                <field name="dgii_response" widget="text" readonly="1"/>
+                                <field name="error_message" widget="text" readonly="1"
+                                       invisible="not error_message"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista de Lista del Resumen -->
+    <record id="view_e_cf_consumo_resumen_tree" model="ir.ui.view">
+        <field name="name">e.cf.consumo.resumen.list</field>
+        <field name="model">e.cf.consumo.resumen</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state=='accepted'"
+                  decoration-danger="state=='rejected'"
+                  decoration-warning="state=='error'">
+                <field name="name"/>
+                <field name="periodo"/>
+                <field name="cantidad_comprobantes"/>
+                <field name="monto_total"/>
+                <field name="state"/>
+                <field name="track_id"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Acción -->
+    <record id="action_e_cf_consumo_resumen" model="ir.actions.act_window">
+        <field name="name">Resúmenes de Consumo (RFCE)</field>
+        <field name="res_model">e.cf.consumo.resumen</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crear un nuevo resumen de facturas de consumo
+            </p>
+            <p>
+                Los resúmenes RFCE agrupan facturas B02 menores a RD$250,000
+                para envío a DGII.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menú -->
+    <menuitem
+        id="menu_e_cf_consumo_resumen"
+        name="Resúmenes RFCE"
+        parent="l10n_do_e_cf_core.menu_e_cf_config_root"
+        action="action_e_cf_consumo_resumen"
+        sequence="20"
+    />
+</odoo>

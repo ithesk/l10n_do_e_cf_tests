@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista de Formulario del Set de Pruebas -->
+    <record id="view_ecf_test_set_form" model="ir.ui.view">
+        <field name="name">ecf.test.set.form</field>
+        <field name="model">ecf.test.set</field>
+        <field name="arch" type="xml">
+            <form string="Set de Pruebas DGII">
+                <header>
+                    <button name="action_send_by_type" type="object" string="📤 Enviar por Tipo" class="oe_highlight"
+                            invisible="state not in ('in_progress', 'completed')"
+                            help="Envío controlado por tipo de e-CF (Batch Mode)"/>
+                    <button name="action_generate_volume_cases" type="object" string="📋 Generar Volumen"
+                            class="btn-secondary"
+                            help="Generar casos de volumen usando una plantilla"/>
+                    <button name="action_open_simulator" type="object" string="🧪 Simulador"
+                            class="btn-info"
+                            help="Abrir el simulador de documentos e-CF para crear documentos manualmente"/>
+                    <button name="action_resend_failed" type="object" string="🔄 Reenviar Fallidos" class="btn-warning"
+                            invisible="cases_error == 0 and cases_rejected == 0"
+                            help="Reintentar envío de casos con error o rechazados"/>
+                    <button name="action_download_all_json" type="object" string="⬇️ Descargar JSONs (ZIP)"
+                            invisible="cases_ready == 0 and cases_sent == 0 and cases_accepted == 0"
+                            help="Descarga todos los JSONs generados en un archivo ZIP"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,in_progress,completed,certified"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Nombre del Set de Pruebas"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="description"/>
+                            <field name="certification_date" invisible="state != 'certified'"/>
+                        </group>
+                        <group>
+                            <field name="total_cases"/>
+                            <field name="volume_cases_generated"/>
+                            <field name="cases_pending"/>
+                            <field name="cases_ready"/>
+                            <field name="cases_sent"/>
+                            <field name="cases_accepted"/>
+                            <field name="cases_rejected"/>
+                            <field name="cases_error"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Casos e-CF" name="ecf_cases">
+                            <field name="ecf_case_ids" context="{'tree_view_ref': 'l10n_do_e_cf_tests.view_ecf_test_case_tree_simple'}"/>
+                        </page>
+                        <page string="Casos RFCE (Resúmenes)" name="rfce_cases">
+                            <field name="rfce_case_ids" context="{'tree_view_ref': 'l10n_do_e_cf_tests.view_ecf_test_rfce_case_tree_simple'}"/>
+                        </page>
+                        <page string="Notas de Certificación" name="notes" invisible="state not in ('completed', 'certified')">
+                            <field name="certification_notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista de Lista del Set de Pruebas -->
+    <record id="view_ecf_test_set_tree" model="ir.ui.view">
+        <field name="name">ecf.test.set.list</field>
+        <field name="model">ecf.test.set</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state=='certified'"
+                  decoration-info="state=='completed'">
+                <field name="name"/>
+                <field name="total_cases"/>
+                <field name="cases_accepted"/>
+                <field name="cases_rejected"/>
+                <field name="state"/>
+                <field name="create_date"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Acción para Set de Pruebas -->
+    <record id="action_ecf_test_set" model="ir.actions.act_window">
+        <field name="name">Sets de Pruebas DGII</field>
+        <field name="res_model">ecf.test.set</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crear un nuevo set de pruebas
+            </p>
+            <p>
+                Importe el archivo Excel oficial de la DGII usando el asistente
+                "Importar Set de Pruebas".
+            </p>
+        </field>
+    </record>
+
+    <!-- Menú -->
+    <menuitem
+        id="menu_ecf_test_set"
+        name="Sets de Pruebas"
+        parent="l10n_do_e_cf_core.menu_e_cf_config_root"
+        action="action_ecf_test_set"
+        sequence="10"
+    />
+</odoo>

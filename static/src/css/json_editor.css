@@ -1,0 +1,79 @@
+/* Estilos para el editor de JSON y respuesta API */
+
+/* Campo de texto para JSON con estilo de editor de código */
+.o_field_text_mono textarea,
+.o_field_widget[name="payload_json"] textarea,
+.o_field_widget[name="api_response"] textarea {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    background-color: #1e1e1e !important;
+    color: #d4d4d4 !important;
+    border: 1px solid #3c3c3c !important;
+    border-radius: 4px !important;
+    padding: 10px !important;
+    min-height: 400px !important;
+    white-space: pre !important;
+    overflow: auto !important;
+    tab-size: 2 !important;
+    resize: vertical !important;
+}
+
+/* Estilo para modo lectura */
+.o_field_text_mono .o_readonly,
+.o_field_widget[name="payload_json"] .o_readonly,
+.o_field_widget[name="api_response"] .o_readonly,
+.o_field_widget[name="api_response"] span {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    background-color: #252526 !important;
+    color: #d4d4d4 !important;
+    border: 1px solid #3c3c3c !important;
+    border-radius: 4px !important;
+    padding: 10px !important;
+    min-height: 400px !important;
+    max-height: 600px !important;
+    white-space: pre-wrap !important;
+    overflow: auto !important;
+    display: block !important;
+}
+
+/* Placeholder styling */
+.o_field_widget[name="payload_json"] textarea::placeholder,
+.o_field_widget[name="api_response"] textarea::placeholder {
+    color: #6c757d !important;
+    font-style: italic !important;
+}
+
+/* Focus state para JSON editable */
+.o_field_widget[name="payload_json"] textarea:focus {
+    outline: none !important;
+    border-color: #007bff !important;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25) !important;
+}
+
+/* Respuesta API - fondo ligeramente diferente para distinguir */
+.o_field_widget[name="api_response"] textarea,
+.o_field_widget[name="api_response"] .o_readonly {
+    background-color: #1a1a2e !important;
+}
+
+/* Labels para los campos */
+.o_form_view label[for="payload_json"],
+.o_form_view label[for="api_response"] {
+    font-weight: 600 !important;
+    color: #495057 !important;
+    margin-bottom: 5px !important;
+}
+
+/* Botón de envío destacado */
+.btn-success {
+    background-color: #28a745 !important;
+    border-color: #28a745 !important;
+}
+
+.btn-success:hover {
+    background-color: #218838 !important;
+    border-color: #1e7e34 !important;
+}

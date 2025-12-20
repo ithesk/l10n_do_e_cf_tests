@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista List Simple para usar en One2many -->
+    <record id="view_ecf_test_case_tree_simple" model="ir.ui.view">
+        <field name="name">ecf.test.case.list.simple</field>
+        <field name="model">ecf.test.case</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state=='accepted'"
+                  decoration-danger="state=='rejected'"
+                  decoration-warning="state=='error'"
+                  decoration-info="state=='sent'">
+                <field name="name"/>
+                <field name="fila_excel"/>
+                <field name="tipo_ecf"/>
+                <field name="is_volume_case" optional="hide"/>
+                <field name="volume_sequence" optional="hide"/>
+                <field name="receptor_nombre"/>
+                <field name="monto_total"/>
+                <field name="state"/>
+                <field name="api_status"/>
+                <field name="track_id"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vista de Formulario de Caso de Prueba ECF -->
+    <record id="view_ecf_test_case_form" model="ir.ui.view">
+        <field name="name">ecf.test.case.form</field>
+        <field name="model">ecf.test.case</field>
+        <field name="arch" type="xml">
+            <form string="Caso de Prueba e-CF">
+                <header>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_api_logs" type="object" class="oe_stat_button" icon="fa-list-alt"
+                                invisible="api_log_count == 0">
+                            <field name="api_log_count" widget="statinfo" string="Logs API"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group name="basic_info">
+                            <field name="test_set_id" readonly="1"/>
+                            <field name="sequence"/>
+                            <field name="fila_excel" readonly="1"/>
+                            <field name="tipo_ecf" widget="badge"/>
+                        </group>
+                        <group name="expected">
+                            <field name="expected_result"/>
+                            <field name="actual_result"/>
+                        </group>
+                        <group>
+                            <field name="id_lote" readonly="1"/>
+                            <field name="hash_input" readonly="1"/>
+                        </group>
+                        <group name="volume_info" invisible="not is_volume_case">
+                            <field name="is_volume_case" readonly="1"/>
+                            <field name="volume_sequence" readonly="1"/>
+                            <field name="template_case_id" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <!-- JSON GENERADO - Primera pestaña para fácil acceso -->
+                        <page string="📄 JSON y Envío" name="json_view">
+                            <!-- Barra de acciones -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <field name="json_validation_status" widget="badge"
+                                           decoration-success="json_validation_status == 'valid'"
+                                           decoration-danger="json_validation_status == 'invalid'"
+                                           decoration-warning="json_validation_status == 'empty'"/>
+                                    <field name="api_status" widget="badge" class="ms-2"
+                                           decoration-success="api_status == 'accepted'"
+                                           decoration-danger="api_status in ('rejected', 'error')"
+                                           decoration-info="api_status == 'sent'"
+                                           decoration-warning="api_status == 'pending'"/>
+                                </div>
+                                <div class="col-md-8 text-end">
+                                    <button name="action_send_to_api" type="object"
+                                            string="🚀 Enviar a API" class="btn btn-success"
+                                            invisible="not payload_json"
+                                            confirm="¿Enviar este JSON a la API? Se usará la configuración de MSeller."/>
+                                    <button name="action_print_invoice" type="object"
+                                            string="🖨️ Imprimir Factura" class="btn btn-primary ms-2"
+                                            invisible="not payload_json"
+                                            help="Genera PDF con formato de factura DGII"/>
+                                    <button name="action_use_as_template" type="object"
+                                            string="📋 Usar como Plantilla" class="btn btn-info ms-2"
+                                            invisible="not payload_json"
+                                            help="Genera múltiples casos de volumen basados en este caso"/>
+                                    <button name="action_format_json" type="object"
+                                            string="🔄 Formatear" class="btn btn-secondary ms-2"
+                                            invisible="not payload_json"/>
+                                    <button name="action_download_json" type="object"
+                                            string="⬇️ Descargar" class="btn btn-outline-primary ms-2"
+                                            invisible="not payload_json"/>
+                                </div>
+                            </div>
+
+                            <!-- Mensaje de validación -->
+                            <div class="mb-2">
+                                <field name="json_validation_message" readonly="1" nolabel="1"/>
+                            </div>
+
+                            <!-- Layout de 2 columnas: JSON a la izquierda, Respuesta a la derecha -->
+                            <div class="row">
+                                <div class="col-md-7">
+                                    <label for="payload_json" string="JSON del e-CF (Editable)"/>
+                                    <field name="payload_json" nolabel="1"
+                                           placeholder="El JSON del e-CF aparecerá aquí..."
+                                           class="o_field_text_mono"/>
+                                </div>
+                                <div class="col-md-5">
+                                    <label for="api_response" string="Respuesta de la API (JSON)"/>
+                                    <field name="api_response" nolabel="1"
+                                           placeholder="La respuesta de la API aparecerá aquí después del envío..."
+                                           class="o_field_text_mono"/>
+
+                                    <div class="mt-2" invisible="not api_response_raw">
+                                        <label for="api_response_raw" string="Respuesta Completa (Raw)"/>
+                                        <field name="api_response_raw" nolabel="1"
+                                               class="o_field_text_mono"/>
+                                    </div>
+
+                                    <div class="mt-2" invisible="not signed_xml">
+                                        <label for="signed_xml" string="XML Firmado"/>
+                                        <button name="action_download_signed_xml" type="object"
+                                                string="Descargar XML" class="btn btn-sm btn-primary ms-2"
+                                                icon="fa-download"/>
+                                        <field name="signed_xml" nolabel="1"
+                                               class="o_field_text_mono mt-1"/>
+                                    </div>
+
+                                    <div class="mt-2">
+                                        <label for="track_id" string="Track ID (Editable)"/>
+                                        <field name="track_id"/>
+                                    </div>
+
+                                    <div class="mt-2">
+                                        <label for="error_message" string="Mensaje de Error (Editable)"/>
+                                        <field name="error_message" nolabel="1"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sección de Datos DGII Editables para Pruebas -->
+                            <div class="alert alert-warning mt-3" role="alert">
+                                <h6>🧪 Datos de Respuesta DGII (Editables para Pruebas)</h6>
+                                <p class="mb-2">Modifica estos campos para probar la generación de QR y otros valores sin enviar a la API.</p>
+                            </div>
+                            <group>
+                                <group string="Respuesta DGII">
+                                    <field name="track_id"/>
+                                    <field name="qr_url" string="URL/Base64 del QR"/>
+                                    <field name="security_code"/>
+                                </group>
+                                <group string="Estado">
+                                    <field name="state"/>
+                                    <field name="api_status"/>
+                                    <field name="actual_result"/>
+                                </group>
+                            </group>
+                            <group>
+                                <field name="dgii_response" string="Respuesta DGII Completa"/>
+                            </group>
+
+                            <div class="alert alert-info mt-3" role="alert">
+                                <h6>💡 Instrucciones</h6>
+                                <ol class="mb-0">
+                                    <li>Edita el JSON si es necesario</li>
+                                    <li>Haz clic en "🚀 Enviar a API" para enviar</li>
+                                    <li>La respuesta aparecerá a la derecha automáticamente</li>
+                                    <li><strong>Para pruebas:</strong> Modifica track_id, qr_url, security_code directamente para probar generación de QR</li>
+                                </ol>
+                            </div>
+                        </page>
+
+                        <page string="Datos del Comprobante" name="comprobante">
+                            <group>
+                                <group string="Receptor">
+                                    <field name="receptor_rnc"/>
+                                    <field name="receptor_nombre"/>
+                                    <field name="receptor_tipo_identificacion"/>
+                                    <field name="identificador_extranjero"/>
+                                </group>
+                                <group string="Información General">
+                                    <field name="fecha_comprobante"/>
+                                    <field name="moneda"/>
+                                    <field name="tipo_ingreso"/>
+                                    <field name="tipo_pago"/>
+                                    <field name="fecha_vencimiento"/>
+                                </group>
+                            </group>
+                            <group string="Modificaciones (NC/ND)">
+                                <field name="ncf_modificado"/>
+                                <field name="razon_modificacion"/>
+                            </group>
+                        </page>
+
+                        <page string="Montos y Totales" name="montos">
+                            <group>
+                                <group string="Montos Base">
+                                    <field name="monto_subtotal"/>
+                                    <field name="monto_descuento"/>
+                                    <field name="monto_exento"/>
+                                </group>
+                                <group string="Montos Gravados">
+                                    <field name="monto_gravado_i1"/>
+                                    <field name="monto_gravado_i2"/>
+                                    <field name="monto_gravado_i3"/>
+                                    <field name="monto_gravado_total"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="ITBIS">
+                                    <field name="total_itbis1"/>
+                                    <field name="total_itbis2"/>
+                                    <field name="total_itbis3"/>
+                                    <field name="total_itbis"/>
+                                </group>
+                                <group string="Totales">
+                                    <field name="monto_total"/>
+                                    <field name="monto_total_pagar"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page string="Items/Líneas" name="items">
+                            <group>
+                                <field name="cantidad_items"/>
+                                <field name="descripcion_item"/>
+                                <field name="precio_unitario"/>
+                            </group>
+                        </page>
+
+                        <page string="Resultado (Editable)" name="resultado">
+                            <div class="alert alert-warning mb-3" role="alert">
+                                <strong>🧪 Modo de Prueba:</strong> Todos los campos en esta pestaña son editables para permitir pruebas de QR y otros valores.
+                            </div>
+                            <group>
+                                <group string="Datos DGII">
+                                    <field name="track_id"/>
+                                    <field name="qr_url" string="URL/Base64 del QR"/>
+                                    <field name="security_code"/>
+                                </group>
+                                <group string="Estado">
+                                    <field name="state"/>
+                                    <field name="api_status"/>
+                                    <field name="actual_result"/>
+                                </group>
+                            </group>
+                            <group>
+                                <field name="payload_json" widget="text"/>
+                            </group>
+                            <group>
+                                <field name="api_response" widget="text"/>
+                                <field name="dgii_response" widget="text"/>
+                                <field name="error_message" widget="text"/>
+                            </group>
+                        </page>
+
+                        <page string="Logs de API" name="api_logs" invisible="api_log_count == 0">
+                            <field name="api_log_ids" nolabel="1">
+                                <list decoration-success="api_status == 'accepted'"
+                                      decoration-danger="api_status in ('error', 'rejected', 'timeout', 'connection_error')">
+                                    <field name="create_date" string="Fecha/Hora"/>
+                                    <field name="request_url"/>
+                                    <field name="response_status_code"/>
+                                    <field name="response_time_ms"/>
+                                    <field name="api_status" widget="badge"/>
+                                    <field name="track_id"/>
+                                    <field name="connection_success" invisible="1"/>
+                                    <button name="action_view_detail" type="object" string="Ver Detalle" icon="fa-search"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>
