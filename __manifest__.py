@@ -52,6 +52,7 @@ Website: https://www.ithesk.com
     "depends": ["account", "mail"],
     "data": [
         "security/ir.model.access.csv",
+        "views/menu_views.xml",
         "data/ecf_api_provider_data.xml",
         "reports/ecf_invoice_report.xml",
         "reports/ecf_invoice_template.xml",

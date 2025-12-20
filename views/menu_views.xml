@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Menú Raíz de Facturación Electrónica -->
+    <menuitem
+        id="menu_e_cf_root"
+        name="Facturación Electrónica"
+        parent="account.menu_finance_configuration"
+        sequence="40"
+    />
+</odoo>
