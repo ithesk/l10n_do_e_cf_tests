@@ -86,11 +86,8 @@ class ECfConsumoResumen(models.Model):
         if not self.company_id.vat:
             raise UserError(_("La compañía debe tener RNC configurado."))
 
-        # Generar XML
+        # Generar XML (la firma se hace en la API externa)
         xml_string = self._build_rfce_xml()
-
-        # Firmar XML si está configurado
-        xml_string = self._sign_rfce_xml(xml_string)
 
         # Guardar XML
         self.write({
@@ -142,22 +139,6 @@ class ECfConsumoResumen(models.Model):
         ).decode('utf-8')
 
         return xml_string
-
-    def _sign_rfce_xml(self, xml_string):
-        """Firma el XML RFCE con el certificado digital"""
-        # Usar el mismo método de firma que e.cf.document
-        try:
-            ecf_doc_obj = self.env['e.cf.document']
-            if hasattr(ecf_doc_obj, '_sign_xml'):
-                # Crear un registro temporal para usar el método de firma
-                temp_doc = ecf_doc_obj.new({})
-                return temp_doc._sign_xml(xml_string)
-            else:
-                _logger.warning("Método de firma no disponible para RFCE")
-                return xml_string
-        except Exception as e:
-            _logger.error(f"Error al firmar XML RFCE: {e}")
-            return xml_string
 
     def action_send_to_dgii(self):
         """Envía el resumen RFCE a DGII"""
