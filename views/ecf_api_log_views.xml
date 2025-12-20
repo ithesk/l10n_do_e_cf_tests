@@ -88,49 +88,73 @@
 
                     <notebook>
                         <page string="Request (Envío)" name="request">
-                            <group string="URL y Headers">
-                                <field name="request_url" string="URL"/>
-                                <field name="request_method"/>
-                                <field name="request_headers" widget="text"/>
+                            <group>
+                                <group string="URL">
+                                    <field name="request_url" string="URL"/>
+                                    <field name="request_method"/>
+                                </group>
+                                <group string="Headers" invisible="not request_headers">
+                                    <field name="request_headers" widget="text" nolabel="1"/>
+                                </group>
                             </group>
-                            <group string="Payload Enviado">
+                            <div class="o_api_log_code_container">
+                                <div class="o_api_code_header">
+                                    <h4><i class="fa fa-code"/> Payload Enviado <span class="o_code_type_badge">JSON</span></h4>
+                                </div>
                                 <field name="request_payload_formatted" widget="text" nolabel="1"
-                                       class="o_field_text_mono"/>
-                            </group>
+                                       class="o_field_text_mono" style="width: 100%;"/>
+                            </div>
                         </page>
                         <page string="Response (Respuesta)" name="response">
-                            <group string="Headers de Respuesta" invisible="not response_headers">
-                                <field name="response_headers" widget="text"/>
+                            <group col="1" invisible="not response_headers">
+                                <group string="Headers de Respuesta">
+                                    <field name="response_headers" widget="text" nolabel="1"/>
+                                </group>
                             </group>
-                            <group string="Respuesta JSON Parseada" invisible="not response_json">
+                            <div class="o_api_log_code_container" invisible="not response_json">
+                                <div class="o_api_code_header">
+                                    <h4><i class="fa fa-file-code-o"/> Respuesta JSON Parseada <span class="o_code_type_badge">JSON</span></h4>
+                                </div>
                                 <field name="response_json" widget="text" nolabel="1"
-                                       class="o_field_text_mono"/>
-                            </group>
-                            <group string="Respuesta Completa (Raw)">
+                                       class="o_field_text_mono" style="width: 100%;"/>
+                            </div>
+                            <div class="o_api_log_code_container">
+                                <div class="o_api_code_header">
+                                    <h4><i class="fa fa-file-text-o"/> Respuesta Completa (Raw)</h4>
+                                </div>
                                 <field name="response_body_formatted" widget="text" nolabel="1"
-                                       class="o_field_text_mono"/>
-                            </group>
+                                       class="o_field_text_mono" style="width: 100%;"/>
+                            </div>
                         </page>
                         <page string="XML Firmado" name="signed_xml" invisible="not signed_xml">
                             <div class="alert alert-success mb-3" role="alert" invisible="not is_rfce">
                                 <strong>Documento RFCE</strong> - Este documento fue enviado como Resumen de Factura de Consumo (consumo &lt; 250k).
                                 Se muestran ambos XMLs: el RFCE enviado a DGII y el ECF completo para archivo.
                             </div>
-                            <div class="alert alert-success mb-3" role="alert" invisible="is_rfce">
+                            <div class="alert alert-info mb-3" role="alert" invisible="is_rfce">
                                 <strong>XML Firmado disponible</strong> - Use el botón "Descargar XML Firmado" para obtener el archivo.
                             </div>
-                            <group string="XML RFCE (Resumen enviado a DGII)" invisible="not is_rfce">
+                            <div class="o_api_log_code_container" invisible="not is_rfce">
+                                <div class="o_api_code_header">
+                                    <h4><i class="fa fa-file-code-o"/> XML RFCE (Resumen enviado a DGII) <span class="o_code_type_badge xml">XML</span></h4>
+                                </div>
                                 <field name="signed_xml" widget="text" nolabel="1"
-                                       class="o_field_text_mono"/>
-                            </group>
-                            <group string="XML ECF Completo (para archivo interno)" invisible="not signed_xml_ecf">
+                                       class="o_field_text_mono" style="width: 100%;"/>
+                            </div>
+                            <div class="o_api_log_code_container" invisible="not signed_xml_ecf">
+                                <div class="o_api_code_header">
+                                    <h4><i class="fa fa-file-code-o"/> XML ECF Completo (para archivo interno) <span class="o_code_type_badge xml">XML</span></h4>
+                                </div>
                                 <field name="signed_xml_ecf" widget="text" nolabel="1"
-                                       class="o_field_text_mono"/>
-                            </group>
-                            <group invisible="is_rfce">
+                                       class="o_field_text_mono" style="width: 100%;"/>
+                            </div>
+                            <div class="o_api_log_code_container" invisible="is_rfce">
+                                <div class="o_api_code_header">
+                                    <h4><i class="fa fa-file-code-o"/> XML Firmado <span class="o_code_type_badge xml">XML</span></h4>
+                                </div>
                                 <field name="signed_xml" widget="text" nolabel="1"
-                                       class="o_field_text_mono"/>
-                            </group>
+                                       class="o_field_text_mono" style="width: 100%;"/>
+                            </div>
                         </page>
                         <page string="Validación DGII" name="dgii_validation" invisible="not signed_xml">
                             <div class="row mb-3">

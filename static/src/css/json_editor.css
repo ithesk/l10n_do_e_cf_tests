@@ -1,42 +1,88 @@
 /* Estilos para el editor de JSON y respuesta API */
 
+/* Contenedor de ancho completo para JSON/XML */
+.o_api_log_code_container {
+    width: 100% !important;
+    padding: 0 !important;
+    margin-bottom: 16px !important;
+}
+
+.o_api_log_code_container .o_group {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.o_api_log_code_container .o_inner_group {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.o_api_log_code_container .o_cell {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
 /* Campo de texto para JSON con estilo de editor de código */
 .o_field_text_mono textarea,
 .o_field_widget[name="payload_json"] textarea,
-.o_field_widget[name="api_response"] textarea {
+.o_field_widget[name="api_response"] textarea,
+.o_field_widget[name="request_payload_formatted"] textarea,
+.o_field_widget[name="response_body_formatted"] textarea,
+.o_field_widget[name="response_json"] textarea,
+.o_field_widget[name="signed_xml"] textarea,
+.o_field_widget[name="signed_xml_ecf"] textarea {
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace !important;
     font-size: 12px !important;
-    line-height: 1.4 !important;
+    line-height: 1.5 !important;
     background-color: #1e1e1e !important;
     color: #d4d4d4 !important;
     border: 1px solid #3c3c3c !important;
-    border-radius: 4px !important;
-    padding: 10px !important;
-    min-height: 400px !important;
+    border-radius: 6px !important;
+    padding: 16px !important;
+    min-height: 300px !important;
+    max-height: none !important;
     white-space: pre !important;
-    overflow: auto !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
     tab-size: 2 !important;
     resize: vertical !important;
+    width: 100% !important;
 }
 
-/* Estilo para modo lectura */
+/* Estilo para modo lectura - código JSON/XML */
 .o_field_text_mono .o_readonly,
+.o_field_text_mono span.o_field_char,
+.o_field_text_mono pre,
 .o_field_widget[name="payload_json"] .o_readonly,
 .o_field_widget[name="api_response"] .o_readonly,
-.o_field_widget[name="api_response"] span {
+.o_field_widget[name="api_response"] span,
+.o_field_widget[name="request_payload_formatted"] .o_readonly,
+.o_field_widget[name="request_payload_formatted"] span,
+.o_field_widget[name="response_body_formatted"] .o_readonly,
+.o_field_widget[name="response_body_formatted"] span,
+.o_field_widget[name="response_json"] .o_readonly,
+.o_field_widget[name="response_json"] span,
+.o_field_widget[name="signed_xml"] .o_readonly,
+.o_field_widget[name="signed_xml"] span,
+.o_field_widget[name="signed_xml_ecf"] .o_readonly,
+.o_field_widget[name="signed_xml_ecf"] span {
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace !important;
     font-size: 12px !important;
-    line-height: 1.4 !important;
-    background-color: #252526 !important;
+    line-height: 1.5 !important;
+    background-color: #1e1e1e !important;
     color: #d4d4d4 !important;
     border: 1px solid #3c3c3c !important;
-    border-radius: 4px !important;
-    padding: 10px !important;
-    min-height: 400px !important;
-    max-height: 600px !important;
-    white-space: pre-wrap !important;
-    overflow: auto !important;
+    border-radius: 6px !important;
+    padding: 16px !important;
+    min-height: 200px !important;
+    max-height: 70vh !important;
+    white-space: pre !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
     display: block !important;
+    width: 100% !important;
+    word-wrap: normal !important;
+    word-break: normal !important;
 }
 
 /* Placeholder styling */
@@ -76,4 +122,134 @@
 .btn-success:hover {
     background-color: #218838 !important;
     border-color: #1e7e34 !important;
+}
+
+/* ========================================
+   Estilos mejorados para API Log viewer
+   ======================================== */
+
+/* Contenedor principal para código - ancho completo */
+.o_api_code_block {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Encabezado de sección de código */
+.o_api_code_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #2d2d30 0%, #252526 100%);
+    border: 1px solid #3c3c3c;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    margin-top: 12px;
+}
+
+.o_api_code_header h4 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #cccccc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.o_api_code_header h4 .fa {
+    color: #569cd6;
+}
+
+.o_api_code_header .o_code_type_badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background-color: #0e639c;
+    color: #ffffff;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.o_api_code_header .o_code_type_badge.xml {
+    background-color: #4ec9b0;
+    color: #1e1e1e;
+}
+
+/* Scrollbar personalizado para código */
+.o_field_text_mono ::-webkit-scrollbar,
+.o_api_log_code_container ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.o_field_text_mono ::-webkit-scrollbar-track,
+.o_api_log_code_container ::-webkit-scrollbar-track {
+    background: #1e1e1e;
+    border-radius: 5px;
+}
+
+.o_field_text_mono ::-webkit-scrollbar-thumb,
+.o_api_log_code_container ::-webkit-scrollbar-thumb {
+    background: #424242;
+    border-radius: 5px;
+}
+
+.o_field_text_mono ::-webkit-scrollbar-thumb:hover,
+.o_api_log_code_container ::-webkit-scrollbar-thumb:hover {
+    background: #4f4f4f;
+}
+
+/* Contenedor responsive para código en notebook */
+.o_notebook .o_api_log_code_container {
+    padding: 0 !important;
+}
+
+.o_notebook .o_api_log_code_container .o_field_text_mono {
+    width: 100% !important;
+}
+
+/* Forzar ancho completo en página del notebook */
+.o_notebook_page .o_api_log_code_container,
+.o_notebook_content .o_api_log_code_container {
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
+/* Eliminar restricciones de grupo en contenedor de código */
+.o_api_log_code_container .o_group,
+.o_api_log_code_container .o_inner_group,
+.o_api_log_code_container .o_group_col_6 {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+}
+
+/* Campo de texto ocupa todo el ancho */
+.o_api_log_code_container .o_field_widget {
+    width: 100% !important;
+    flex: 1 !important;
+}
+
+/* Para headers de respuesta - más compacto */
+.o_field_widget[name="request_headers"] .o_readonly,
+.o_field_widget[name="request_headers"] span,
+.o_field_widget[name="response_headers"] .o_readonly,
+.o_field_widget[name="response_headers"] span {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'Courier New', monospace !important;
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+    background-color: #2d2d30 !important;
+    color: #9cdcfe !important;
+    border: 1px solid #3c3c3c !important;
+    border-radius: 4px !important;
+    padding: 10px !important;
+    min-height: 60px !important;
+    max-height: 200px !important;
+    white-space: pre !important;
+    overflow: auto !important;
+    display: block !important;
+    width: 100% !important;
 }
