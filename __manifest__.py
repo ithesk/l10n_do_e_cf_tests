@@ -40,7 +40,7 @@ Requirements
 ------------
 * Python packages: openpyxl, requests, qrcode
 * Odoo 19.0
-* l10n_do_e_cf_core module
+* Odoo account module
 
 Author: ITHesk
 Website: https://www.ithesk.com
@@ -49,7 +49,7 @@ Website: https://www.ithesk.com
     "author": "ITHesk,",
     "website": "https://www.ithesk.com",
     "license": "LGPL-3",
-    "depends": ["l10n_do_e_cf_core", "mail"],
+    "depends": ["account", "mail"],
     "data": [
         "security/ir.model.access.csv",
         "data/ecf_api_provider_data.xml",

@@ -39,7 +39,7 @@ Complete test suite for DGII (Dirección General de Impuestos Internos) electron
 ## Requirements
 
 - Odoo 19.0
-- `l10n_do_e_cf_core` module
+- `account` module (Odoo Accounting)
 - Python packages:
   ```bash
   pip install openpyxl requests qrcode

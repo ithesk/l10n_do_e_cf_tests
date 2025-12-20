@@ -119,7 +119,7 @@
     <menuitem
         id="menu_e_cf_consumo_resumen"
         name="Resúmenes RFCE"
-        parent="l10n_do_e_cf_core.menu_e_cf_config_root"
+        parent="menu_e_cf_root"
         action="action_e_cf_consumo_resumen"
         sequence="20"
     />

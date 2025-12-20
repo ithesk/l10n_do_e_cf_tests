@@ -62,7 +62,7 @@
     <menuitem
         id="menu_run_test_set"
         name="Importar Set de Pruebas"
-        parent="l10n_do_e_cf_core.menu_e_cf_config_root"
+        parent="menu_e_cf_root"
         action="action_run_test_set_wizard"
         sequence="5"
     />

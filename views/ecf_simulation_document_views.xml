@@ -308,7 +308,7 @@
     <!-- Menu para acceder al simulador -->
     <menuitem id="menu_ecf_simulation_document"
               name="Simulador de Documentos"
-              parent="l10n_do_e_cf_core.menu_e_cf_config_root"
+              parent="menu_e_cf_root"
               action="action_ecf_simulation_document"
               sequence="5"/>
 

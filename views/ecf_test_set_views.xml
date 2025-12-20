@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Menú Raíz de Facturación Electrónica -->
+    <menuitem
+        id="menu_e_cf_root"
+        name="Facturación Electrónica"
+        parent="account.menu_finance_configuration"
+        sequence="40"
+    />
+
     <!-- Vista de Formulario del Set de Pruebas -->
     <record id="view_ecf_test_set_form" model="ir.ui.view">
         <field name="name">ecf.test.set.form</field>
@@ -99,7 +107,7 @@
     <menuitem
         id="menu_ecf_test_set"
         name="Sets de Pruebas"
-        parent="l10n_do_e_cf_core.menu_e_cf_config_root"
+        parent="menu_e_cf_root"
         action="action_ecf_test_set"
         sequence="10"
     />

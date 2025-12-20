@@ -248,7 +248,7 @@
     <!-- Menú para logs -->
     <menuitem id="menu_ecf_api_log"
               name="Log de Transacciones"
-              parent="l10n_do_e_cf_core.menu_e_cf_config_root"
+              parent="menu_e_cf_root"
               action="action_ecf_api_log"
               sequence="15"/>
 </odoo>

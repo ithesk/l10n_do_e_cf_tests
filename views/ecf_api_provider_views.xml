@@ -205,7 +205,7 @@
     <!-- Menú para Proveedores de API -->
     <menuitem id="menu_ecf_api_provider"
               name="Proveedores de API"
-              parent="l10n_do_e_cf_core.menu_e_cf_config_root"
+              parent="menu_e_cf_root"
               action="ecf_api_provider_action"
               sequence="3"/>
 

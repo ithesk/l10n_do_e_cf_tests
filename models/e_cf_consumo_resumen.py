@@ -1,6 +1,5 @@
 import logging
 from lxml import etree
-import os
 from odoo import api, fields, models, _
 from odoo.exceptions import UserError
 
@@ -141,7 +140,7 @@ class ECfConsumoResumen(models.Model):
         return xml_string
 
     def action_send_to_dgii(self):
-        """Envía el resumen RFCE a DGII"""
+        """Envía el resumen RFCE a DGII usando el API provider"""
         self.ensure_one()
 
         if not self.xml_payload:
@@ -150,27 +149,44 @@ class ECfConsumoResumen(models.Model):
         if self.state not in ('generated', 'error'):
             raise UserError(_("El resumen ya fue enviado o está en proceso."))
 
-        # Obtener servicio DGII
-        dgii_client = self.env['e.cf.config'].get_dgii_client()
+        # Obtener el proveedor de API por defecto
+        provider = self.env['ecf.api.provider'].get_default_provider()
+
+        if not provider:
+            raise UserError(_(
+                "No hay proveedor de API configurado.\n"
+                "Configure uno en: Facturación Electrónica > Proveedores de API"
+            ))
 
         try:
-            # Enviar RFCE
-            response = dgii_client.send_rfce(self.xml_payload)
+            # Construir JSON para el API provider
+            rfce_data = {
+                'xml_payload': self.xml_payload,
+                'rnc': self.company_id.vat,
+                'periodo': self.periodo,
+            }
 
-            if response.get('success'):
+            # Enviar usando el provider (el provider manejará la firma y envío)
+            success, response_data, track_id, error_msg, raw_response, signed_xml = provider.send_ecf(
+                ecf_json={'RFCE': rfce_data},
+                rnc=self.company_id.vat,
+                origin='rfce_resumen'
+            )[:6]
+
+            if success:
                 self.write({
                     'state': 'sent',
-                    'track_id': response.get('track_id'),
-                    'dgii_response': str(response)
+                    'track_id': track_id,
+                    'dgii_response': raw_response or str(response_data)
                 })
-                _logger.info(f"RFCE enviado exitosamente. TrackID: {response.get('track_id')}")
+                _logger.info(f"RFCE enviado exitosamente. TrackID: {track_id}")
             else:
                 self.write({
                     'state': 'error',
-                    'error_message': response.get('error', 'Error desconocido'),
-                    'dgii_response': str(response)
+                    'error_message': error_msg or 'Error desconocido',
+                    'dgii_response': raw_response or str(response_data)
                 })
-                raise UserError(_("Error al enviar RFCE: %s") % response.get('error'))
+                raise UserError(_("Error al enviar RFCE: %s") % error_msg)
 
         except Exception as e:
             _logger.error(f"Error al enviar RFCE a DGII: {e}")
@@ -189,10 +205,18 @@ class ECfConsumoResumen(models.Model):
         if not self.track_id:
             raise UserError(_("No hay TrackID para consultar."))
 
-        dgii_client = self.env['e.cf.config'].get_dgii_client()
+        # Obtener el proveedor de API por defecto
+        provider = self.env['ecf.api.provider'].get_default_provider()
+
+        if not provider:
+            raise UserError(_(
+                "No hay proveedor de API configurado.\n"
+                "Configure uno en: Facturación Electrónica > Proveedores de API"
+            ))
 
         try:
-            response = dgii_client.check_status(self.track_id)
+            # Usar el provider para consultar estado
+            response = provider.check_status(self.track_id)
 
             status = response.get('estado', '').upper()
 
