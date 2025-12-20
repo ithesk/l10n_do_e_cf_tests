@@ -42,11 +42,11 @@ Requirements
 * Odoo 19.0
 * l10n_do_e_cf_core module
 
-Author: ITHesk / Marsa Systems
+Author: ITHesk
 Website: https://www.ithesk.com
     """,
     "category": "Accounting/Localizations",
-    "author": "ITHesk, Marsa Systems",
+    "author": "ITHesk,",
     "website": "https://www.ithesk.com",
     "license": "LGPL-3",
     "depends": ["l10n_do_e_cf_core", "mail"],
