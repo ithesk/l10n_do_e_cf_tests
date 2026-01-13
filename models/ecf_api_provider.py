@@ -172,17 +172,42 @@ class EcfApiProvider(models.Model):
         self.ensure_one()
         headers = {"Content-Type": "application/json"}
 
+        # ===== DEBUG: Log detallado de configuración =====
+        _logger.info("=" * 60)
+        _logger.info("[AUTH DEBUG] ===== GENERANDO HEADERS DE AUTENTICACIÓN =====")
+        _logger.info(f"[AUTH DEBUG] Provider ID: {self.id}")
+        _logger.info(f"[AUTH DEBUG] Provider Name: {self.name}")
+        _logger.info(f"[AUTH DEBUG] auth_type: '{self.auth_type}'")
+        _logger.info(f"[AUTH DEBUG] auth_token existe: {bool(self.auth_token)}")
+        _logger.info(f"[AUTH DEBUG] auth_token valor: '{self.auth_token[:10]}...' " if self.auth_token and len(self.auth_token) > 10 else f"[AUTH DEBUG] auth_token valor: '{self.auth_token}'")
+        _logger.info(f"[AUTH DEBUG] api_key_header: '{self.api_key_header}'")
+        _logger.info("=" * 60)
+
         if self.auth_type == 'bearer':
             if self.auth_token:
                 headers["Authorization"] = f"Bearer {self.auth_token}"
+                _logger.info("[AUTH DEBUG] -> Agregando header Authorization: Bearer ****")
+            else:
+                _logger.warning("[AUTH DEBUG] -> auth_type='bearer' PERO auth_token ESTÁ VACÍO!")
         elif self.auth_type == 'api_key':
             if self.auth_token:
                 header_name = self.api_key_header or "X-API-KEY"
                 headers[header_name] = self.auth_token
+                _logger.info(f"[AUTH DEBUG] -> Agregando header '{header_name}': '{self.auth_token}'")
+            else:
+                _logger.warning("[AUTH DEBUG] -> auth_type='api_key' PERO auth_token ESTÁ VACÍO!")
         elif self.auth_type == 'mseller' and token:
             headers["Authorization"] = f"Bearer {token}"
             if self.auth_token:
                 headers["X-API-KEY"] = self.auth_token
+            _logger.info("[AUTH DEBUG] -> Agregando headers MSeller (Bearer + X-API-KEY)")
+        elif self.auth_type == 'none':
+            _logger.warning("[AUTH DEBUG] -> auth_type='none' - NO SE ENVÍA AUTENTICACIÓN!")
+        else:
+            _logger.warning(f"[AUTH DEBUG] -> auth_type='{self.auth_type}' NO RECONOCIDO o token faltante")
+
+        _logger.info(f"[AUTH DEBUG] Headers finales: {list(headers.keys())}")
+        _logger.info("=" * 60)
 
         return headers
 
@@ -799,8 +824,22 @@ class EcfApiProvider(models.Model):
     # ========================================================================
 
     def action_test_connection(self):
-        """Prueba la conexión con el proveedor"""
+        """Prueba la conexión con el proveedor - ahora con autenticación real"""
         self.ensure_one()
+
+        _logger.info("=" * 70)
+        _logger.info("[TEST CONNECTION] ===== INICIANDO PRUEBA DE CONEXIÓN =====")
+        _logger.info(f"[TEST CONNECTION] Provider: {self.name} (ID: {self.id})")
+        _logger.info(f"[TEST CONNECTION] URL: {self.api_url}")
+        _logger.info(f"[TEST CONNECTION] Provider Type: {self.provider_type}")
+        _logger.info(f"[TEST CONNECTION] Auth Type: {self.auth_type}")
+        _logger.info(f"[TEST CONNECTION] API Key Header Config: {self.api_key_header}")
+        _logger.info(f"[TEST CONNECTION] Auth Token Exists: {bool(self.auth_token)}")
+        if self.auth_token:
+            _logger.info(f"[TEST CONNECTION] Auth Token Value: '{self.auth_token}'")
+        else:
+            _logger.warning("[TEST CONNECTION] *** AUTH TOKEN ESTÁ VACÍO ***")
+        _logger.info("=" * 70)
 
         try:
             if self.provider_type == 'mseller':
@@ -816,24 +855,93 @@ class EcfApiProvider(models.Model):
                     }
                 }
             else:
-                # Para otros tipos, hacer un HEAD request
+                # Para API Local/Custom: hacer POST real con payload mínimo
                 if not self.api_url:
                     raise UserError(_("Configure la URL de la API primero"))
 
-                r = requests.head(self.api_url, timeout=10)
-                return {
-                    'type': 'ir.actions.client',
-                    'tag': 'display_notification',
-                    'params': {
-                        'title': _('Conexión Exitosa'),
-                        'message': _('API respondió con status %s') % r.status_code,
-                        'type': 'success',
-                        'sticky': False,
-                    }
+                # Obtener headers con autenticación
+                headers = self._get_auth_headers()
+
+                _logger.info(f"[TEST CONNECTION] Headers a enviar: {headers}")
+
+                # Payload mínimo para probar autenticación
+                test_payload = {
+                    "invoiceData": {"test": True},
+                    "rnc": "000000000",
+                    "encf": "E310000000000"
                 }
 
-        except Exception as e:
+                _logger.info(f"[TEST CONNECTION] Enviando POST a: {self.api_url}")
+                _logger.info(f"[TEST CONNECTION] Payload: {json.dumps(test_payload)}")
+
+                r = requests.post(
+                    self.api_url,
+                    headers=headers,
+                    json=test_payload,
+                    timeout=self.timeout or 30
+                )
+
+                _logger.info(f"[TEST CONNECTION] Response Status: {r.status_code}")
+                _logger.info(f"[TEST CONNECTION] Response Body: {r.text[:500]}")
+                _logger.info("=" * 70)
+
+                # Analizar respuesta
+                if r.status_code == 401:
+                    # Error de autenticación
+                    error_detail = f"HTTP 401 - Autenticación fallida\n\n"
+                    error_detail += f"Headers enviados:\n"
+                    for k, v in headers.items():
+                        if 'key' in k.lower() or 'auth' in k.lower():
+                            error_detail += f"  {k}: {v}\n"
+                        else:
+                            error_detail += f"  {k}: {v}\n"
+                    error_detail += f"\nRespuesta API:\n{r.text[:300]}"
+                    raise UserError(_(error_detail))
+
+                elif r.status_code == 400:
+                    # Validación fallida pero autenticación OK
+                    return {
+                        'type': 'ir.actions.client',
+                        'tag': 'display_notification',
+                        'params': {
+                            'title': _('Autenticación Exitosa'),
+                            'message': _('La API Key es válida. (Error 400 es esperado con datos de prueba)'),
+                            'type': 'success',
+                            'sticky': False,
+                        }
+                    }
+                elif r.status_code == 500:
+                    # Error interno pero autenticación OK
+                    return {
+                        'type': 'ir.actions.client',
+                        'tag': 'display_notification',
+                        'params': {
+                            'title': _('Autenticación Exitosa'),
+                            'message': _('La API Key es válida. (Error 500: %s)') % r.text[:100],
+                            'type': 'success',
+                            'sticky': False,
+                        }
+                    }
+                else:
+                    return {
+                        'type': 'ir.actions.client',
+                        'tag': 'display_notification',
+                        'params': {
+                            'title': _('Conexión OK'),
+                            'message': _('API respondió con status %s') % r.status_code,
+                            'type': 'success',
+                            'sticky': False,
+                        }
+                    }
+
+        except requests.exceptions.RequestException as e:
+            _logger.error(f"[TEST CONNECTION] Error de conexión: {str(e)}")
             raise UserError(_("Error de conexión:\n%s") % str(e))
+        except UserError:
+            raise
+        except Exception as e:
+            _logger.error(f"[TEST CONNECTION] Error inesperado: {str(e)}")
+            raise UserError(_("Error inesperado:\n%s") % str(e))
 
     def action_set_as_default(self):
         """Establece este proveedor como predeterminado"""
