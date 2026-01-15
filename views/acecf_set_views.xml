@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista Lista de Sets ACECF -->
+    <record id="view_acecf_set_list" model="ir.ui.view">
+        <field name="name">acecf.set.list</field>
+        <field name="model">acecf.set</field>
+        <field name="arch" type="xml">
+            <list string="Sets de Aprobaciones Comerciales">
+                <field name="name"/>
+                <field name="total_cases"/>
+                <field name="cases_accepted"/>
+                <field name="cases_rejected"/>
+                <field name="cases_error"/>
+                <field name="state" widget="badge" decoration-success="state == 'completed'" decoration-warning="state == 'in_progress'" decoration-info="state == 'draft'"/>
+                <field name="create_date"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vista Formulario de Set ACECF -->
+    <record id="view_acecf_set_form" model="ir.ui.view">
+        <field name="name">acecf.set.form</field>
+        <field name="model">acecf.set</field>
+        <field name="arch" type="xml">
+            <form string="Set de Aprobaciones Comerciales">
+                <header>
+                    <button name="action_send_all" string="Enviar Todos" type="object" class="btn-primary" invisible="cases_ready == 0"/>
+                    <button name="action_resend_failed" string="Reenviar Fallidos" type="object" class="btn-warning" invisible="cases_error == 0 and cases_rejected == 0"/>
+                    <button name="action_download_all_json" string="Descargar JSONs" type="object" class="btn-secondary"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,in_progress,completed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Nombre del set"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Estadisticas">
+                            <field name="total_cases"/>
+                            <field name="cases_ready" string="Listos para enviar"/>
+                            <field name="cases_accepted"/>
+                            <field name="cases_rejected"/>
+                            <field name="cases_error"/>
+                        </group>
+                        <group string="Informacion">
+                            <field name="description"/>
+                            <field name="create_date" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Casos de Aprobacion" name="cases">
+                            <field name="acecf_case_ids" mode="list">
+                                <list string="Casos ACECF" decoration-success="state == 'accepted'" decoration-danger="state in ('rejected', 'error')" decoration-warning="state == 'payload_ready'">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="encf"/>
+                                    <field name="rnc_emisor"/>
+                                    <field name="rnc_comprador"/>
+                                    <field name="monto_total" sum="Total"/>
+                                    <field name="fecha_emision"/>
+                                    <field name="estado_aprobacion"/>
+                                    <field name="state" widget="badge"/>
+                                    <button name="action_send_to_api" string="Enviar" type="object" class="btn-sm btn-primary" invisible="state != 'payload_ready'"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista Busqueda -->
+    <record id="view_acecf_set_search" model="ir.ui.view">
+        <field name="name">acecf.set.search</field>
+        <field name="model">acecf.set</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Sets ACECF">
+                <field name="name"/>
+                <separator/>
+                <filter name="filter_draft" string="Borrador" domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_in_progress" string="En Progreso" domain="[('state', '=', 'in_progress')]"/>
+                <filter name="filter_completed" string="Completado" domain="[('state', '=', 'completed')]"/>
+                <separator/>
+                <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+                <filter name="group_date" string="Fecha" context="{'group_by': 'create_date:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Accion para ver sets ACECF -->
+    <record id="action_acecf_set" model="ir.actions.act_window">
+        <field name="name">Sets de Aprobaciones</field>
+        <field name="res_model">acecf.set</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_acecf_set_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay sets de aprobaciones comerciales
+            </p>
+            <p>
+                Importe un archivo Excel de la DGII para crear un set.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu para ACECF -->
+    <menuitem
+        id="menu_acecf_root"
+        name="Aprobaciones Comerciales"
+        parent="menu_e_cf_root"
+        sequence="20"
+    />
+
+    <menuitem
+        id="menu_acecf_sets"
+        name="Sets de Aprobaciones"
+        parent="menu_acecf_root"
+        action="action_acecf_set"
+        sequence="1"
+    />
+
+    <menuitem
+        id="menu_acecf_cases"
+        name="Casos Individuales"
+        parent="menu_acecf_root"
+        action="action_acecf_case"
+        sequence="2"
+    />
+</odoo>

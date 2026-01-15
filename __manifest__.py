@@ -54,6 +54,7 @@ Website: https://www.ithesk.com
         "security/ir.model.access.csv",
         "views/menu_views.xml",
         "data/ecf_api_provider_data.xml",
+        "data/dgii_callback_config_data.xml",
         "reports/ecf_invoice_report.xml",
         "reports/ecf_invoice_template.xml",
         "views/res_config_settings_views.xml",
@@ -64,9 +65,15 @@ Website: https://www.ithesk.com
         "views/ecf_test_set_views.xml",
         "views/e_cf_consumo_resumen_views.xml",
         "views/ecf_simulation_document_views.xml",
+        "views/dgii_callback_request_views.xml",
+        "views/dgii_callback_config_views.xml",
+        "views/ecf_received_views.xml",
+        "views/acecf_case_views.xml",
+        "views/acecf_set_views.xml",
         "wizards/run_test_set_wizard_view.xml",
         "wizards/send_ecf_by_type_wizard_view.xml",
         "wizards/generate_volume_test_wizard_view.xml",
+        "wizards/import_acecf_wizard_view.xml",
     ],
     "assets": {
         "web.assets_backend": [

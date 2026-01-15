@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_import_acecf_wizard_form" model="ir.ui.view">
+        <field name="name">import.acecf.wizard.form</field>
+        <field name="model">import.acecf.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Importar Aprobaciones Comerciales e-CF">
+                <group>
+                    <div class="alert alert-info" role="alert">
+                        <p><strong>Asistente de Importacion de Aprobaciones Comerciales e-CF (ACECF)</strong></p>
+                        <p>
+                            Carga el archivo Excel oficial de la DGII con las aprobaciones comerciales.
+                            Se creara un registro por cada fila que podra enviar individualmente o en lote.
+                        </p>
+                        <p>
+                            <strong>Columnas esperadas:</strong> Version, RNCEmisor, eNCF, FechaEmision,
+                            MontoTotal, RNCComprador, Estado, DetalleMotivoRechazo, FechaHoraAprobacionComercial
+                        </p>
+                    </div>
+                </group>
+                <group>
+                    <group>
+                        <field name="acecf_file" filename="filename"/>
+                        <field name="filename" invisible="1"/>
+                        <field name="set_name"/>
+                    </group>
+                    <group>
+                        <field name="send_to_api"/>
+                    </group>
+                </group>
+
+                <div class="alert alert-warning" role="alert" invisible="not send_to_api">
+                    <p>
+                        <strong>Envio automatico activado:</strong> Despues de importar, todos los casos
+                        se enviaran automaticamente a la API configurada.
+                    </p>
+                </div>
+
+                <footer>
+                    <button name="action_import" string="Importar" type="object" class="btn-primary"/>
+                    <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_import_acecf_wizard" model="ir.actions.act_window">
+        <field name="name">Importar Aprobaciones Comerciales</field>
+        <field name="res_model">import.acecf.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <menuitem
+        id="menu_import_acecf"
+        name="Importar ACECF"
+        parent="menu_acecf_root"
+        action="action_import_acecf_wizard"
+        sequence="10"
+    />
+</odoo>

@@ -34,8 +34,14 @@ class EcfApiLog(models.Model):
         ('simulation', 'Simulador de Documentos'),
         ('test_set', 'Set de Pruebas'),
         ('test_case', 'Caso de Prueba'),
+        ('acecf_case', 'Caso ACECF'),
+        ('acecf_set', 'Set ACECF'),
+        ('acecf_import', 'Importacion ACECF'),
         ('wizard', 'Wizard'),
         ('manual', 'Manual'),
+        ('callback_recepcion', 'Callback Recepcion DGII'),
+        ('callback_recepcion_json', 'Callback Recepcion (JSON)'),
+        ('callback_aprobacion', 'Callback Aprobacion Comercial'),
         ('other', 'Otro'),
     ], string="Origen", default='other', index=True)
 
@@ -43,6 +49,14 @@ class EcfApiLog(models.Model):
     test_case_id = fields.Many2one(
         "ecf.test.case",
         string="Caso de Prueba",
+        ondelete="set null",
+        index=True
+    )
+
+    # Relación con caso de aprobación comercial ACECF
+    acecf_case_id = fields.Many2one(
+        "acecf.case",
+        string="Caso ACECF",
         ondelete="set null",
         index=True
     )
@@ -110,6 +124,12 @@ class EcfApiLog(models.Model):
         help="Tiempo de respuesta en milisegundos"
     )
 
+    # XML Recibido (para callbacks: XML original que llegó de DGII)
+    incoming_xml = fields.Text(
+        string="XML Recibido",
+        help="XML original recibido en un callback de DGII (e-CF que nos enviaron)."
+    )
+
     # XML Firmado (se guarda original sin formatear para no invalidar firma)
     # Para RFCE: signed_xml = XML RFCE (resumen), signed_xml_ecf = XML ECF completo
     signed_xml = fields.Text(
@@ -128,6 +148,11 @@ class EcfApiLog(models.Model):
     has_signed_xml = fields.Boolean(
         string="Tiene XML",
         compute="_compute_has_signed_xml",
+        store=True
+    )
+    has_incoming_xml = fields.Boolean(
+        string="Tiene XML Recibido",
+        compute="_compute_has_incoming_xml",
         store=True
     )
 
@@ -213,6 +238,11 @@ class EcfApiLog(models.Model):
     def _compute_has_signed_xml(self):
         for log in self:
             log.has_signed_xml = bool(log.signed_xml)
+
+    @api.depends('incoming_xml')
+    def _compute_has_incoming_xml(self):
+        for log in self:
+            log.has_incoming_xml = bool(log.incoming_xml)
 
     @api.depends('xml_rnc_emisor', 'xml_rnc_comprador', 'xml_encf',
                  'xml_fecha_emision', 'xml_monto_total', 'xml_fecha_firma', 'xml_security_code',
@@ -403,12 +433,15 @@ class EcfApiLog(models.Model):
 
     @api.model
     def create_from_request(self, provider=None, origin='other',
-                            test_case_id=None, simulation_doc_id=None,
+                            test_case_id=None, simulation_doc_id=None, acecf_case_id=None,
                             request_url=None, request_payload=None, request_headers=None,
-                            rnc=None, encf=None, tipo_ecf=None):
+                            rnc=None, encf=None, tipo_ecf=None, incoming_xml=None):
         """
         Crea un registro de log ANTES de enviar a la API.
-        Retorna el log para actualizarlo después con la respuesta.
+        Retorna el log para actualizarlo despues con la respuesta.
+
+        Para callbacks de DGII, se puede pasar incoming_xml con el XML original
+        que llego, para trazabilidad y depuracion.
         """
         vals = {
             'origin': origin,
@@ -420,10 +453,16 @@ class EcfApiLog(models.Model):
             'api_status': 'pending',
         }
 
+        # Guardar XML original recibido (para callbacks)
+        if incoming_xml:
+            vals['incoming_xml'] = incoming_xml
+
         if test_case_id:
             vals['test_case_id'] = test_case_id
         if simulation_doc_id:
             vals['simulation_doc_id'] = simulation_doc_id
+        if acecf_case_id:
+            vals['acecf_case_id'] = acecf_case_id
 
         if provider:
             vals.update({
@@ -595,6 +634,29 @@ class EcfApiLog(models.Model):
             'target': 'new',
         }
 
+    def action_download_incoming_xml(self):
+        """Descarga el XML original recibido en el callback"""
+        self.ensure_one()
+        if not self.incoming_xml:
+            raise UserError(_("No hay XML recibido disponible."))
+
+        filename = f"{self.encf or 'incoming'}_{self.id}_recibido.xml"
+        content = self.incoming_xml.encode('utf-8')
+        b64_content = base64.b64encode(content).decode('utf-8')
+
+        attachment = self.env['ir.attachment'].create({
+            'name': filename,
+            'type': 'binary',
+            'datas': b64_content,
+            'mimetype': 'application/xml',
+        })
+
+        return {
+            'type': 'ir.actions.act_url',
+            'url': f'/web/content/{attachment.id}?download=true',
+            'target': 'new',
+        }
+
     def action_download_signed_xml(self):
         """Descarga el XML firmado (RFCE para consumo < 250k, ECF normal para otros)"""
         self.ensure_one()
@@ -670,6 +732,14 @@ class EcfApiLog(models.Model):
                 'type': 'ir.actions.act_window',
                 'res_model': 'ecf.test.case',
                 'res_id': self.test_case_id.id,
+                'view_mode': 'form',
+                'target': 'current',
+            }
+        elif self.acecf_case_id:
+            return {
+                'type': 'ir.actions.act_window',
+                'res_model': 'acecf.case',
+                'res_id': self.acecf_case_id.id,
                 'view_mode': 'form',
                 'target': 'current',
             }

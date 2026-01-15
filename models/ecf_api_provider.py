@@ -47,6 +47,11 @@ class EcfApiProvider(models.Model):
              "(ej: /api/invoice/send-summary-with-ecf). Recibe ECF completo y devuelve "
              "signedEcfXml y signedRfceXml."
     )
+    api_url_acecf = fields.Char(
+        string="URL ACECF (Aprobaciones Comerciales)",
+        help="URL para enviar aprobaciones comerciales e-CF "
+             "(ej: /api/invoice/acecf)"
+    )
     environment = fields.Selection([
         ('test', 'Pruebas'),
         ('cert', 'Certificación'),
@@ -539,17 +544,18 @@ class EcfApiProvider(models.Model):
             raise
 
     def send_ecf(self, ecf_json, rnc=None, encf=None, origin='other',
-                 test_case_id=None, simulation_doc_id=None):
+                 test_case_id=None, simulation_doc_id=None, acecf_case_id=None):
         """
-        Envía un documento e-CF usando este proveedor y registra en log.
+        Envia un documento e-CF usando este proveedor y registra en log.
 
         Args:
-            ecf_json: dict con el JSON del ECF (estructura {"ECF": {...}})
+            ecf_json: dict con el JSON del ECF (estructura {"ECF": {...}} o {"ACECF": {...}})
             rnc: RNC del emisor (opcional, para API local)
             encf: eNCF del documento (opcional, para API local)
-            origin: origen del envío ('simulation', 'test_case', 'wizard', etc.)
+            origin: origen del envio ('simulation', 'test_case', 'acecf_case', 'wizard', etc.)
             test_case_id: ID del caso de prueba (opcional)
-            simulation_doc_id: ID del documento de simulación (opcional)
+            simulation_doc_id: ID del documento de simulacion (opcional)
+            acecf_case_id: ID del caso ACECF (opcional)
 
         Returns:
             tuple: (success, response_data, track_id, error_message, raw_response, signed_xml)
@@ -590,6 +596,7 @@ class EcfApiProvider(models.Model):
             origin=origin,
             test_case_id=test_case_id,
             simulation_doc_id=simulation_doc_id,
+            acecf_case_id=acecf_case_id,
             request_payload=ecf_json,
             rnc=rnc,
             encf=encf,
@@ -701,13 +708,20 @@ class EcfApiProvider(models.Model):
             return False, None, None, "URL de API no configurada", None, None
 
         # Debug: mostrar valores de URLs configuradas
+        _logger.info(f"[API Local] ========== DEBUG URL SUMMARY ==========")
         _logger.info(f"[API Local] api_url configurada: '{self.api_url}'")
-        _logger.info(f"[API Local] api_url_summary configurada: '{self.api_url_summary}'")
+        _logger.info(f"[API Local] api_url_summary RAW: '{self.api_url_summary}'")
+        _logger.info(f"[API Local] api_url_summary TYPE: {type(self.api_url_summary)}")
+        _logger.info(f"[API Local] api_url_summary BOOL: {bool(self.api_url_summary)}")
+        _logger.info(f"[API Local] api_url_summary REPR: {repr(self.api_url_summary)}")
         _logger.info(f"[API Local] use_summary solicitado: {use_summary}")
+        _logger.info(f"[API Local] Provider ID: {self.id}, Name: {self.name}")
+        _logger.info(f"[API Local] ==========================================")
 
         # Determinar URL a usar
         # Para consumo < 250k: usar endpoint combinado que devuelve ambos XMLs
         summary_url = (self.api_url_summary or '').strip()
+        _logger.info(f"[API Local] summary_url después de strip: '{summary_url}' (len={len(summary_url)})")
         if use_summary and summary_url:
             url = summary_url
             _logger.info(f"[API Local] Usando endpoint combinado RFCE+ECF para consumo < 250k: {url}")
@@ -818,6 +832,149 @@ class EcfApiProvider(models.Model):
     def _send_custom(self, ecf_json, rnc, encf, use_summary=False):
         """Envía documento a API personalizada (mismo que local por ahora)"""
         return self._send_local(ecf_json, rnc, encf, use_summary=use_summary)
+
+    def send_acecf(self, acecf_json, origin='acecf_case', acecf_case_id=None):
+        """
+        Envia una Aprobacion Comercial e-CF (ACECF) a la API.
+
+        Usa la misma configuracion del proveedor (URL base, API key, etc.)
+        pero envia al endpoint /api/invoice/acecf con formato plano.
+
+        Args:
+            acecf_json: dict con estructura ACECF o campos planos
+            origin: origen del envio
+            acecf_case_id: ID del caso ACECF
+
+        Returns:
+            tuple: (success, response_data, track_id, error_message, raw_response, signed_xml)
+        """
+        self.ensure_one()
+        import time
+        start_time = time.time()
+
+        # Extraer datos del JSON ACECF
+        if 'ACECF' in acecf_json:
+            detalle = acecf_json.get('ACECF', {}).get('DetalleAprobacionComercial', {})
+        else:
+            detalle = acecf_json
+
+        # Construir payload en formato plano que espera la API
+        payload = {
+            'rncEmisor': detalle.get('RNCEmisor'),
+            'eNCF': detalle.get('eNCF'),
+            'fechaEmision': detalle.get('FechaEmision'),
+            'montoTotal': detalle.get('MontoTotal'),
+            'rncComprador': detalle.get('RNCComprador'),
+            'estado': detalle.get('Estado'),
+        }
+
+        # Campos opcionales
+        if detalle.get('FechaHoraAprobacionComercial'):
+            payload['fechaHoraAprobacionComercial'] = detalle.get('FechaHoraAprobacionComercial')
+        if detalle.get('DetalleMotivoRechazo'):
+            payload['detalleMotivoRechazo'] = detalle.get('DetalleMotivoRechazo')
+
+        rnc = payload.get('rncEmisor')
+        encf = payload.get('eNCF')
+
+        # Construir URL ACECF basada en la configuracion del proveedor
+        # Usa api_url_acecf si esta configurado, sino deriva de api_url
+        if self.api_url_acecf:
+            acecf_url = self.api_url_acecf.strip()
+        elif self.api_url:
+            # Extraer URL base y agregar endpoint ACECF
+            # Ejemplo: https://joy.miapprd.com/api/invoice/send -> https://joy.miapprd.com/api/invoice/acecf
+            base_url = self.api_url.strip().rstrip('/')
+            # Buscar /api/ en la URL para construir el endpoint correcto
+            if '/api/' in base_url:
+                api_base = base_url.split('/api/')[0]
+                acecf_url = f"{api_base}/api/invoice/acecf"
+            else:
+                # Fallback: reemplazar ultimo segmento
+                parts = base_url.rsplit('/', 1)
+                acecf_url = f"{parts[0]}/acecf" if len(parts) == 2 else f"{base_url}/acecf"
+        else:
+            return False, None, None, "URL de API no configurada en el proveedor", None, None
+
+        _logger.info(f"[ACECF] Enviando a {acecf_url} - eNCF: {encf}")
+
+        # Obtener headers de autenticacion del proveedor
+        headers = self._get_auth_headers()
+        headers['Content-Type'] = 'application/json'
+
+        # Crear log antes de enviar
+        ApiLog = self.env['ecf.api.log']
+        api_log = ApiLog.create_from_request(
+            provider=self,
+            origin=origin,
+            acecf_case_id=acecf_case_id,
+            request_url=acecf_url,
+            request_payload=payload,
+            request_headers=headers,
+            rnc=rnc,
+            encf=encf,
+            tipo_ecf='ACECF'
+        )
+
+        try:
+            _logger.info(f"[ACECF] Headers: {headers}")
+            _logger.info(f"[ACECF] Payload: {json.dumps(payload, ensure_ascii=False)}")
+
+            r = requests.post(acecf_url, headers=headers, json=payload, timeout=self.timeout)
+            raw_response = r.text
+            response_time_ms = int((time.time() - start_time) * 1000)
+
+            _logger.info(f"[ACECF] Status: {r.status_code}")
+            _logger.info(f"[ACECF] Response: {raw_response[:500] if raw_response else 'empty'}")
+
+            try:
+                response_data = r.json()
+            except Exception:
+                response_data = {"raw_response": raw_response}
+
+            # Determinar exito
+            success = False
+            track_id = None
+            error_msg = None
+
+            if isinstance(response_data, dict):
+                success = response_data.get('success', False)
+                track_id = response_data.get('trackId') or response_data.get('track_id')
+                if not success:
+                    error_msg = response_data.get('error') or response_data.get('message')
+
+            if 200 <= r.status_code < 300 and success:
+                api_log.update_with_response(
+                    success=True,
+                    status_code=r.status_code,
+                    response_body=raw_response,
+                    response_json=response_data,
+                    track_id=track_id,
+                    response_time_ms=response_time_ms
+                )
+                return True, response_data, track_id, None, raw_response, None
+            else:
+                error_msg = error_msg or f"HTTP {r.status_code}"
+                api_log.update_with_response(
+                    success=False,
+                    status_code=r.status_code,
+                    response_body=raw_response,
+                    response_json=response_data,
+                    error_message=error_msg,
+                    response_time_ms=response_time_ms
+                )
+                return False, response_data, track_id, error_msg, raw_response, None
+
+        except requests.exceptions.Timeout:
+            response_time_ms = int((time.time() - start_time) * 1000)
+            error_msg = f"Timeout despues de {self.timeout} segundos"
+            api_log.update_with_response(success=False, error_message=error_msg, response_time_ms=response_time_ms)
+            return False, None, None, error_msg, None, None
+        except requests.exceptions.RequestException as e:
+            response_time_ms = int((time.time() - start_time) * 1000)
+            error_msg = str(e)
+            api_log.update_with_response(success=False, error_message=error_msg, response_time_ms=response_time_ms)
+            return False, None, None, error_msg, None, None
 
     # ========================================================================
     # Acciones

@@ -67,6 +67,10 @@
                                    placeholder="https://api.ejemplo.com/api/invoice/send-summary-with-ecf"
                                    invisible="provider_type == 'mseller'"
                                    help="Para facturas de consumo (tipo 32) con monto menor a 250,000. Devuelve signedEcfXml y signedRfceXml."/>
+                            <field name="api_url_acecf"
+                                   placeholder="https://api.ejemplo.com/api/invoice/acecf"
+                                   invisible="provider_type == 'mseller'"
+                                   help="Endpoint para enviar Aprobaciones Comerciales e-CF (ACECF)."/>
                             <field name="api_url"
                                    placeholder="https://ecf.api.mseller.app"
                                    invisible="provider_type != 'mseller'"/>

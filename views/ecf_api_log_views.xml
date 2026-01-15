@@ -19,7 +19,8 @@
                        decoration-warning="api_status == 'pending'"/>
                 <field name="track_id" optional="show"/>
                 <field name="response_time_ms" string="Tiempo (ms)" optional="show"/>
-                <field name="has_signed_xml" string="XML" optional="show"/>
+                <field name="has_incoming_xml" string="Recibido" optional="show"/>
+                <field name="has_signed_xml" string="Firmado" optional="show"/>
                 <field name="dgii_validation_url" string="Validación" widget="url" optional="hide"/>
             </list>
         </field>
@@ -34,11 +35,14 @@
                 <header>
                     <button name="action_view_origin" type="object" string="Ver Origen"
                             class="oe_highlight"
-                            invisible="not test_case_id and not simulation_doc_id"/>
+                            invisible="not test_case_id and not simulation_doc_id and not acecf_case_id"/>
                     <button name="action_download_request" type="object" string="Descargar Request"
                             icon="fa-download" invisible="not request_payload"/>
                     <button name="action_download_response" type="object" string="Descargar Response"
                             icon="fa-download" invisible="not response_body"/>
+                    <button name="action_download_incoming_xml" type="object"
+                            icon="fa-download" class="btn-warning"
+                            string="Descargar XML Recibido" invisible="not incoming_xml"/>
                     <button name="action_download_signed_xml" type="object"
                             icon="fa-download" class="btn-success"
                             string="Descargar XML RFCE" invisible="not is_rfce or not signed_xml"/>
@@ -65,6 +69,7 @@
                             <field name="provider_type" invisible="1"/>
                             <field name="test_case_id" invisible="not test_case_id"/>
                             <field name="simulation_doc_id" invisible="not simulation_doc_id"/>
+                            <field name="acecf_case_id" invisible="not acecf_case_id"/>
                         </group>
                         <group string="Documento e-CF">
                             <field name="encf"/>
@@ -87,6 +92,19 @@
                     </group>
 
                     <notebook>
+                        <page string="XML Recibido" name="incoming_xml" invisible="not incoming_xml">
+                            <div class="alert alert-info mb-3" role="alert">
+                                <strong><i class="fa fa-info-circle"/> XML Original de DGII</strong> - Este es el e-CF que recibimos de DGII antes de procesarlo.
+                                Use el botón "Descargar XML Recibido" para obtener el archivo original.
+                            </div>
+                            <div class="o_api_log_code_container">
+                                <div class="o_api_code_header">
+                                    <h4><i class="fa fa-file-code-o"/> e-CF Recibido de DGII <span class="o_code_type_badge xml">XML</span></h4>
+                                </div>
+                                <field name="incoming_xml" widget="text" nolabel="1"
+                                       class="o_field_text_mono" style="width: 100%;"/>
+                            </div>
+                        </page>
                         <page string="Request (Envío)" name="request">
                             <group>
                                 <group string="URL">
@@ -218,6 +236,12 @@
                 <separator/>
                 <filter name="filter_has_xml" string="Con XML Firmado"
                         domain="[('has_signed_xml', '=', True)]"/>
+                <filter name="filter_callbacks" string="Callbacks DGII"
+                        domain="[('origin', 'in', ['callback_recepcion', 'callback_aprobacion'])]"/>
+                <filter name="filter_has_incoming" string="Con XML Recibido"
+                        domain="[('incoming_xml', '!=', False)]"/>
+                <filter name="filter_acecf" string="ACECF"
+                        domain="[('origin', 'in', ['acecf_case', 'acecf_set', 'acecf_import'])]"/>
                 <separator/>
                 <filter name="group_origin" string="Origen" context="{'group_by': 'origin'}"/>
                 <filter name="group_provider" string="Proveedor" context="{'group_by': 'provider_id'}"/>

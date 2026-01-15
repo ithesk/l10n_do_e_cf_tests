@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista Lista de Casos ACECF -->
+    <record id="view_acecf_case_list" model="ir.ui.view">
+        <field name="name">acecf.case.list</field>
+        <field name="model">acecf.case</field>
+        <field name="arch" type="xml">
+            <list string="Casos ACECF" decoration-success="state == 'accepted'" decoration-danger="state in ('rejected', 'error')" decoration-warning="state == 'payload_ready'" decoration-muted="state == 'draft'">
+                <field name="sequence" widget="handle"/>
+                <field name="encf"/>
+                <field name="rnc_emisor"/>
+                <field name="rnc_comprador"/>
+                <field name="monto_total" sum="Total"/>
+                <field name="fecha_emision"/>
+                <field name="estado_aprobacion"/>
+                <field name="state" widget="badge" decoration-success="state == 'accepted'" decoration-danger="state in ('rejected', 'error')" decoration-warning="state == 'payload_ready'" decoration-info="state == 'sent'"/>
+                <button name="action_send_to_api" string="Enviar" type="object" class="btn-primary" invisible="state != 'payload_ready'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vista Formulario de Caso ACECF -->
+    <record id="view_acecf_case_form" model="ir.ui.view">
+        <field name="name">acecf.case.form</field>
+        <field name="model">acecf.case</field>
+        <field name="arch" type="xml">
+            <form string="Caso ACECF">
+                <header>
+                    <button name="action_send_to_api" string="Enviar a API" type="object" class="btn-primary" invisible="state != 'payload_ready'"/>
+                    <button name="action_download_json" string="Descargar JSON" type="object" class="btn-secondary" invisible="not payload_json"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,payload_ready,sent,accepted"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_api_logs" type="object" class="oe_stat_button" icon="fa-list">
+                            <field name="api_log_count" widget="statinfo" string="Logs API"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Nombre del caso"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Datos del Documento">
+                            <field name="encf"/>
+                            <field name="version"/>
+                            <field name="fecha_emision"/>
+                            <field name="monto_total"/>
+                        </group>
+                        <group string="Participantes">
+                            <field name="rnc_emisor"/>
+                            <field name="rnc_comprador"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Aprobacion Comercial">
+                            <field name="estado_aprobacion"/>
+                            <field name="fecha_hora_aprobacion"/>
+                            <field name="detalle_motivo_rechazo" invisible="estado_aprobacion != '2'"/>
+                        </group>
+                        <group string="Trazabilidad">
+                            <field name="acecf_set_id"/>
+                            <field name="fila_excel"/>
+                            <field name="id_lote"/>
+                            <field name="hash_input"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="JSON Generado" name="json">
+                            <field name="payload_json" widget="ace" options="{'mode': 'json'}"/>
+                        </page>
+                        <page string="Respuesta API" name="api_response" invisible="not api_response">
+                            <group>
+                                <field name="track_id"/>
+                                <field name="api_status"/>
+                            </group>
+                            <field name="api_response" widget="ace" options="{'mode': 'json'}"/>
+                            <field name="error_message" invisible="not error_message" class="text-danger"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista Busqueda -->
+    <record id="view_acecf_case_search" model="ir.ui.view">
+        <field name="name">acecf.case.search</field>
+        <field name="model">acecf.case</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Casos ACECF">
+                <field name="encf"/>
+                <field name="rnc_emisor"/>
+                <field name="rnc_comprador"/>
+                <field name="acecf_set_id"/>
+                <separator/>
+                <filter name="filter_pending" string="Pendientes" domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_ready" string="Payload Listo" domain="[('state', '=', 'payload_ready')]"/>
+                <filter name="filter_sent" string="Enviados" domain="[('state', '=', 'sent')]"/>
+                <filter name="filter_accepted" string="Aceptados" domain="[('state', '=', 'accepted')]"/>
+                <filter name="filter_rejected" string="Rechazados" domain="[('state', '=', 'rejected')]"/>
+                <filter name="filter_error" string="Con Error" domain="[('state', '=', 'error')]"/>
+                <separator/>
+                <filter name="group_set" string="Set" context="{'group_by': 'acecf_set_id'}"/>
+                <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+                <filter name="group_estado_aprobacion" string="Estado Aprobacion" context="{'group_by': 'estado_aprobacion'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Accion para ver casos ACECF -->
+    <record id="action_acecf_case" model="ir.actions.act_window">
+        <field name="name">Casos ACECF</field>
+        <field name="res_model">acecf.case</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_acecf_case_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay casos de aprobacion comercial
+            </p>
+            <p>
+                Importe un archivo Excel de la DGII para crear casos.
+            </p>
+        </field>
+    </record>
+</odoo>

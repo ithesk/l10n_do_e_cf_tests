@@ -2,6 +2,11 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_run_test_set_wizard,run.test.set.wizard,model_run_test_set_wizard,account.group_account_manager,1,1,1,1
 access_send_ecf_by_type_wizard,send.ecf.by.type.wizard,model_send_ecf_by_type_wizard,account.group_account_manager,1,1,1,1
 access_generate_volume_test_wizard,generate.volume.test.wizard,model_generate_volume_test_wizard,account.group_account_manager,1,1,1,1
+access_import_acecf_wizard,import.acecf.wizard,model_import_acecf_wizard,account.group_account_manager,1,1,1,1
+access_acecf_case,acecf.case,model_acecf_case,account.group_account_manager,1,1,1,1
+access_acecf_case_user,acecf.case.user,model_acecf_case,account.group_account_invoice,1,0,0,0
+access_acecf_set,acecf.set,model_acecf_set,account.group_account_manager,1,1,1,1
+access_acecf_set_user,acecf.set.user,model_acecf_set,account.group_account_invoice,1,0,0,0
 access_ecf_test_set,ecf.test.set,model_ecf_test_set,account.group_account_manager,1,1,1,1
 access_ecf_test_set_user,ecf.test.set.user,model_ecf_test_set,account.group_account_invoice,1,0,0,0
 access_ecf_test_case,ecf.test.case,model_ecf_test_case,account.group_account_manager,1,1,1,1
@@ -18,3 +23,11 @@ access_ecf_simulation_document_item,ecf.simulation.document.item,model_ecf_simul
 access_ecf_simulation_document_item_user,ecf.simulation.document.item.user,model_ecf_simulation_document_item,account.group_account_invoice,1,0,0,0
 access_ecf_api_provider,ecf.api.provider,model_ecf_api_provider,account.group_account_manager,1,1,1,1
 access_ecf_api_provider_user,ecf.api.provider.user,model_ecf_api_provider,account.group_account_invoice,1,0,0,0
+access_dgii_callback_request,dgii.callback.request,model_dgii_callback_request,account.group_account_manager,1,1,1,1
+access_dgii_callback_request_user,dgii.callback.request.user,model_dgii_callback_request,account.group_account_invoice,1,0,0,0
+access_dgii_callback_config,dgii.callback.config,model_dgii_callback_config,account.group_account_manager,1,1,1,1
+access_dgii_callback_config_user,dgii.callback.config.user,model_dgii_callback_config,account.group_account_invoice,1,0,0,0
+access_ecf_received,ecf.received,model_ecf_received,account.group_account_manager,1,1,1,1
+access_ecf_received_user,ecf.received.user,model_ecf_received,account.group_account_invoice,1,0,0,0
+access_ecf_received_line,ecf.received.line,model_ecf_received_line,account.group_account_manager,1,1,1,1
+access_ecf_received_line_user,ecf.received.line.user,model_ecf_received_line,account.group_account_invoice,1,0,0,0
