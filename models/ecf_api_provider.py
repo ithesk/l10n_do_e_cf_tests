@@ -899,21 +899,20 @@ class EcfApiProvider(models.Model):
 
         rnc = acecf_detalle.get('RNCEmisor')
 
-        # Construir URL ACECF basada en la configuracion del proveedor
-        # Usa api_url_acecf si esta configurado, sino deriva de api_url
-        if self.api_url_acecf:
-            acecf_url = self.api_url_acecf.strip()
-        elif self.api_url:
-            # Extraer URL base y agregar endpoint /api/invoice/approval
+        # Construir URL para /api/invoice/approval
+        # Siempre usa el endpoint /api/invoice/approval (ignora api_url_acecf si tiene el endpoint antiguo)
+        if self.api_url:
             base_url = self.api_url.strip().rstrip('/')
             # Buscar /api/ en la URL para construir el endpoint correcto
             if '/api/' in base_url:
                 api_base = base_url.split('/api/')[0]
                 acecf_url = f"{api_base}/api/invoice/approval"
             else:
-                # Fallback: reemplazar ultimo segmento
-                parts = base_url.rsplit('/', 1)
-                acecf_url = f"{parts[0]}/approval" if len(parts) == 2 else f"{base_url}/approval"
+                # Fallback: agregar endpoint
+                acecf_url = f"{base_url}/api/invoice/approval"
+        elif self.api_url_acecf:
+            # Si solo tiene api_url_acecf, reemplazar /acecf por /approval
+            acecf_url = self.api_url_acecf.strip().replace('/acecf', '/approval')
         else:
             return False, None, None, "URL de API no configurada en el proveedor", None, None
 
