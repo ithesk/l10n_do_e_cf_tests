@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vista List de e-CF Recibidos -->
+    <record id="view_ecf_received_list" model="ir.ui.view">
+        <field name="name">ecf.received.list</field>
+        <field name="model">ecf.received</field>
+        <field name="arch" type="xml">
+            <list string="e-CF Recibidos" default_order="fecha_recepcion desc">
+                <field name="fecha_recepcion" string="Recepción"/>
+                <field name="tipo_ecf" string="Tipo"/>
+                <field name="encf" string="e-NCF"/>
+                <field name="rnc_emisor" string="RNC Emisor"/>
+                <field name="razon_social_emisor" string="Emisor"/>
+                <field name="fecha_emision" string="Emisión"/>
+                <field name="monto_total" string="Total" sum="Total"/>
+                <field name="total_itbis" string="ITBIS" sum="Total ITBIS"/>
+                <field name="state" string="Estado"
+                       decoration-success="state in ('accepted', 'approved')"
+                       decoration-danger="state in ('rejected', 'disputed')"
+                       decoration-warning="state == 'pending_approval'"
+                       decoration-info="state == 'received'"
+                       widget="badge"/>
+                <field name="partner_id" string="Proveedor" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vista Form de e-CF Recibidos -->
+    <record id="view_ecf_received_form" model="ir.ui.view">
+        <field name="name">ecf.received.form</field>
+        <field name="model">ecf.received</field>
+        <field name="arch" type="xml">
+            <form string="e-CF Recibido">
+                <header>
+                    <button name="action_approve" type="object" string="Aprobar"
+                            class="btn-primary" icon="fa-check"
+                            invisible="state not in ('received', 'accepted', 'pending_approval')"/>
+                    <button name="action_reject" type="object" string="Rechazar"
+                            class="btn-danger" icon="fa-times"
+                            invisible="state not in ('received', 'accepted', 'pending_approval')"/>
+                    <button name="action_download_xml" type="object" string="Descargar XML"
+                            icon="fa-download" invisible="not xml_original"/>
+                    <button name="action_download_arecf" type="object" string="Descargar ARECF"
+                            icon="fa-download" class="btn-success" invisible="not xml_arecf"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="received,accepted,approved"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_xml" type="object" class="oe_stat_button"
+                                icon="fa-file-code-o" invisible="not xml_original">
+                            <span>Ver XML</span>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="Documento">
+                            <field name="tipo_ecf"/>
+                            <field name="encf"/>
+                            <field name="fecha_emision"/>
+                            <field name="fecha_recepcion"/>
+                            <field name="tipo_pago"/>
+                        </group>
+                        <group string="Totales">
+                            <field name="monto_gravado_total"/>
+                            <field name="total_itbis"/>
+                            <field name="monto_total"/>
+                            <field name="monto_exento"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Emisor (Proveedor)" name="emisor">
+                            <group>
+                                <group string="Identificación">
+                                    <field name="rnc_emisor"/>
+                                    <field name="razon_social_emisor"/>
+                                    <field name="nombre_comercial_emisor"/>
+                                    <field name="partner_id"/>
+                                </group>
+                                <group string="Contacto">
+                                    <field name="correo_emisor"/>
+                                    <field name="telefono_emisor"/>
+                                    <field name="website_emisor"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="Dirección">
+                                    <field name="direccion_emisor"/>
+                                    <field name="municipio_emisor"/>
+                                    <field name="provincia_emisor"/>
+                                </group>
+                                <group string="Referencias">
+                                    <field name="numero_factura_interna"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page string="Comprador" name="comprador">
+                            <group>
+                                <group string="Identificación">
+                                    <field name="rnc_comprador"/>
+                                    <field name="razon_social_comprador"/>
+                                </group>
+                                <group string="Contacto">
+                                    <field name="contacto_comprador"/>
+                                    <field name="correo_comprador"/>
+                                </group>
+                            </group>
+                            <group>
+                                <field name="direccion_comprador"/>
+                            </group>
+                        </page>
+
+                        <page string="Detalle de Líneas" name="lines">
+                            <field name="line_ids" nolabel="1">
+                                <list editable="bottom">
+                                    <field name="numero_linea" string="#"/>
+                                    <field name="nombre_item" string="Descripción"/>
+                                    <field name="indicador_facturacion" string="Facturación"/>
+                                    <field name="indicador_bien_servicio" string="Tipo"/>
+                                    <field name="cantidad"/>
+                                    <field name="unidad_medida" string="UM"/>
+                                    <field name="precio_unitario" string="P. Unit."/>
+                                    <field name="descuento_monto" string="Desc."/>
+                                    <field name="monto"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <page string="Totales Detallados" name="totales">
+                            <group>
+                                <group string="Montos Gravados">
+                                    <field name="monto_gravado_total"/>
+                                    <field name="monto_gravado_i1" string="Gravado 18%"/>
+                                    <field name="monto_gravado_i2" string="Gravado 16%"/>
+                                    <field name="monto_gravado_i3" string="Gravado 0%"/>
+                                </group>
+                                <group string="ITBIS">
+                                    <field name="total_itbis"/>
+                                    <field name="total_itbis1" string="ITBIS 18%"/>
+                                    <field name="total_itbis2" string="ITBIS 16%"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="Indicadores">
+                                    <field name="indicador_monto_gravado"/>
+                                    <field name="tipo_ingresos"/>
+                                </group>
+                                <group string="Secuencia">
+                                    <field name="fecha_vencimiento_secuencia"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page string="Firma Digital" name="firma">
+                            <group>
+                                <group string="Información de Firma">
+                                    <field name="fecha_hora_firma"/>
+                                    <field name="codigo_seguridad"/>
+                                </group>
+                                <group string="ARECF">
+                                    <field name="arecf_status"/>
+                                    <field name="fecha_arecf"/>
+                                </group>
+                            </group>
+                            <group string="Signature Value" invisible="not signature_value">
+                                <field name="signature_value" nolabel="1" widget="text"/>
+                            </group>
+                        </page>
+
+                        <page string="XML Original" name="xml" invisible="not xml_original">
+                            <div class="o_api_log_code_container">
+                                <field name="xml_original" widget="text" nolabel="1"
+                                       class="o_field_text_mono" style="width: 100%;"/>
+                            </div>
+                        </page>
+
+                        <page string="XML ARECF" name="arecf" invisible="not xml_arecf">
+                            <div class="alert alert-success mb-3" role="alert">
+                                <strong>ARECF Firmado</strong> - Este es el Acuse de Recibo firmado y enviado a DGII.
+                            </div>
+                            <div class="o_api_log_code_container">
+                                <field name="xml_arecf" widget="text" nolabel="1"
+                                       class="o_field_text_mono" style="width: 100%;"/>
+                            </div>
+                        </page>
+
+                        <page string="Trazabilidad" name="tracking">
+                            <group>
+                                <group string="Origen">
+                                    <field name="callback_request_id"/>
+                                    <field name="api_log_id"/>
+                                </group>
+                                <group string="Sistema">
+                                    <field name="company_id" groups="base.group_multi_company"/>
+                                    <field name="create_date" string="Creado"/>
+                                    <field name="write_date" string="Modificado"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista Search -->
+    <record id="view_ecf_received_search" model="ir.ui.view">
+        <field name="name">ecf.received.search</field>
+        <field name="model">ecf.received</field>
+        <field name="arch" type="xml">
+            <search string="Buscar e-CF Recibidos">
+                <field name="encf"/>
+                <field name="rnc_emisor"/>
+                <field name="razon_social_emisor"/>
+                <field name="partner_id"/>
+                <separator/>
+                <filter name="filter_received" string="Recibidos"
+                        domain="[('state', '=', 'received')]"/>
+                <filter name="filter_accepted" string="Aceptados"
+                        domain="[('state', '=', 'accepted')]"/>
+                <filter name="filter_approved" string="Aprobados"
+                        domain="[('state', '=', 'approved')]"/>
+                <filter name="filter_rejected" string="Rechazados"
+                        domain="[('state', 'in', ['rejected', 'disputed'])]"/>
+                <separator/>
+                <filter name="filter_today" string="Hoy"
+                        domain="[('fecha_recepcion', '>=', datetime.datetime.combine(context_today(), datetime.time(0,0,0)))]"/>
+                <filter name="filter_week" string="Esta Semana"
+                        domain="[('fecha_recepcion', '>=', (context_today() - datetime.timedelta(days=7)))]"/>
+                <filter name="filter_month" string="Este Mes"
+                        domain="[('fecha_recepcion', '>=', datetime.datetime.combine(context_today().replace(day=1), datetime.time(0,0,0)))]"/>
+                <separator/>
+                <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+                <filter name="group_tipo" string="Tipo e-CF" context="{'group_by': 'tipo_ecf'}"/>
+                <filter name="group_emisor" string="Emisor" context="{'group_by': 'rnc_emisor'}"/>
+                <filter name="group_date" string="Fecha Recepción" context="{'group_by': 'fecha_recepcion:day'}"/>
+                <filter name="group_partner" string="Proveedor" context="{'group_by': 'partner_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Acción para abrir e-CF Recibidos -->
+    <record id="action_ecf_received" model="ir.actions.act_window">
+        <field name="name">e-CF Recibidos</field>
+        <field name="res_model">ecf.received</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_ecf_received_search"/>
+        <field name="context">{'search_default_filter_received': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No hay comprobantes fiscales recibidos
+            </p>
+            <p>
+                Los e-CF se registran automáticamente cuando proveedores
+                envían comprobantes fiscales a través de la DGII.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menú para e-CF Recibidos -->
+    <menuitem id="menu_ecf_received"
+              name="e-CF Recibidos"
+              parent="menu_e_cf_root"
+              action="action_ecf_received"
+              sequence="12"/>
+</odoo>

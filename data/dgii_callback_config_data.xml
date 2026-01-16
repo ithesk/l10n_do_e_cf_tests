@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- ================================================================== -->
+        <!-- Configuraciones de Callback DGII por Ambiente -->
+        <!-- ================================================================== -->
+
+        <!-- Configuración Local (Desarrollo) -->
+        <record id="dgii_callback_config_local" model="dgii.callback.config">
+            <field name="name">Local (Desarrollo)</field>
+            <field name="environment">local</field>
+            <field name="is_default">True</field>
+            <field name="sequence">10</field>
+
+            <!-- Endpoints locales -->
+            <field name="base_url">http://localhost:8069</field>
+            <field name="endpoint_recepcion">/fe/recepcion/api/ecf</field>
+            <field name="endpoint_aprobacion">/fe/aprobacioncomercial/api/ecf</field>
+            <field name="endpoint_semilla">/fe/autenticacion/api/semilla</field>
+            <field name="endpoint_validacion">/fe/autenticacion/api/validacioncertificado</field>
+
+            <!-- Seguridad relajada para desarrollo -->
+            <field name="enable_rate_limit">False</field>
+            <field name="enable_ip_whitelist">False</field>
+            <field name="verify_client_cert">False</field>
+            <field name="verify_xml_signature">False</field>
+
+            <!-- Procesamiento síncrono para debugging -->
+            <field name="async_processing">False</field>
+            <field name="response_timeout">60</field>
+            <field name="processing_timeout">300</field>
+
+            <!-- Logging detallado -->
+            <field name="log_level">debug</field>
+            <field name="log_retention_days">30</field>
+        </record>
+
+        <!-- Configuración Pre-certificación DGII -->
+        <record id="dgii_callback_config_precert" model="dgii.callback.config">
+            <field name="name">Pre-certificación DGII</field>
+            <field name="environment">precert</field>
+            <field name="is_default">False</field>
+            <field name="sequence">20</field>
+
+            <!-- Endpoints locales (la URL base debe configurarse manualmente) -->
+            <field name="endpoint_recepcion">/fe/recepcion/api/ecf</field>
+            <field name="endpoint_aprobacion">/fe/aprobacioncomercial/api/ecf</field>
+            <field name="endpoint_semilla">/fe/autenticacion/api/semilla</field>
+            <field name="endpoint_validacion">/fe/autenticacion/api/validacioncertificado</field>
+
+            <!-- URLs de DGII Pre-certificación -->
+            <field name="dgii_url_recepcion">https://ecf.dgii.gov.do/testecf/fe/recepcion/api/ecf</field>
+            <field name="dgii_url_aprobacion">https://ecf.dgii.gov.do/testecf/fe/aprobacioncomercial/api/ecf</field>
+            <field name="dgii_url_semilla">https://ecf.dgii.gov.do/testecf/fe/autenticacion/api/semilla</field>
+            <field name="dgii_url_validacion">https://ecf.dgii.gov.do/testecf/fe/autenticacion/api/validacioncertificado</field>
+
+            <!-- Seguridad media para pruebas -->
+            <field name="enable_rate_limit">True</field>
+            <field name="rate_limit_requests">120</field>
+            <field name="rate_limit_burst">20</field>
+            <field name="enable_ip_whitelist">False</field>
+            <field name="verify_client_cert">False</field>
+            <field name="verify_xml_signature">True</field>
+
+            <!-- Procesamiento asíncrono -->
+            <field name="async_processing">True</field>
+            <field name="queue_channel">root.dgii_callbacks</field>
+            <field name="response_timeout">30</field>
+            <field name="processing_timeout">300</field>
+            <field name="max_retries">3</field>
+            <field name="retry_delay">60</field>
+
+            <!-- Logging normal -->
+            <field name="log_level">normal</field>
+            <field name="log_retention_days">60</field>
+        </record>
+
+        <!-- Configuración Producción DGII -->
+        <record id="dgii_callback_config_prod" model="dgii.callback.config">
+            <field name="name">Producción DGII</field>
+            <field name="environment">prod</field>
+            <field name="is_default">False</field>
+            <field name="sequence">30</field>
+
+            <!-- Endpoints locales (la URL base debe configurarse manualmente) -->
+            <field name="endpoint_recepcion">/fe/recepcion/api/ecf</field>
+            <field name="endpoint_aprobacion">/fe/aprobacioncomercial/api/ecf</field>
+            <field name="endpoint_semilla">/fe/autenticacion/api/semilla</field>
+            <field name="endpoint_validacion">/fe/autenticacion/api/validacioncertificado</field>
+
+            <!-- URLs de DGII Producción -->
+            <field name="dgii_url_recepcion">https://ecf.dgii.gov.do/fe/recepcion/api/ecf</field>
+            <field name="dgii_url_aprobacion">https://ecf.dgii.gov.do/fe/aprobacioncomercial/api/ecf</field>
+            <field name="dgii_url_semilla">https://ecf.dgii.gov.do/fe/autenticacion/api/semilla</field>
+            <field name="dgii_url_validacion">https://ecf.dgii.gov.do/fe/autenticacion/api/validacioncertificado</field>
+
+            <!-- Seguridad estricta para producción -->
+            <field name="enable_rate_limit">True</field>
+            <field name="rate_limit_requests">60</field>
+            <field name="rate_limit_burst">10</field>
+            <field name="enable_ip_whitelist">False</field>
+            <field name="verify_client_cert">False</field>
+            <field name="verify_xml_signature">True</field>
+
+            <!-- Procesamiento asíncrono -->
+            <field name="async_processing">True</field>
+            <field name="queue_channel">root.dgii_callbacks</field>
+            <field name="response_timeout">30</field>
+            <field name="processing_timeout">300</field>
+            <field name="max_retries">5</field>
+            <field name="retry_delay">120</field>
+
+            <!-- Logging mínimo para rendimiento -->
+            <field name="log_level">normal</field>
+            <field name="log_retention_days">90</field>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================== -->
+    <!-- DGII Callback Config Views -->
+    <!-- ================================================================== -->
+
+    <!-- List View -->
+    <record id="dgii_callback_config_view_list" model="ir.ui.view">
+        <field name="name">dgii.callback.config.view.list</field>
+        <field name="model">dgii.callback.config</field>
+        <field name="arch" type="xml">
+            <list string="Configuraciones de Callback">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="environment" widget="badge" decoration-info="environment == 'local'" decoration-warning="environment == 'precert'" decoration-success="environment == 'prod'"/>
+                <field name="is_default"/>
+                <field name="enable_rate_limit"/>
+                <field name="enable_ip_whitelist"/>
+                <field name="async_processing"/>
+                <field name="active"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="dgii_callback_config_view_form" model="ir.ui.view">
+        <field name="name">dgii.callback.config.view.form</field>
+        <field name="model">dgii.callback.config</field>
+        <field name="arch" type="xml">
+            <form string="Configuración de Callback DGII">
+                <header>
+                    <button name="action_set_as_default" type="object" string="Establecer como Predeterminado" class="oe_highlight" invisible="is_default"/>
+                    <button name="action_load_dgii_urls" type="object" string="Cargar URLs DGII" invisible="environment == 'local'"/>
+                    <button name="action_test_endpoints" type="object" string="Probar Endpoints"/>
+                    <button name="action_view_callbacks" type="object" string="Ver Callbacks"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_view_callbacks" icon="fa-exchange">
+                            <span>Callbacks</span>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Predeterminado" bg_color="text-bg-success" invisible="not is_default"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Nombre de la configuración"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="General">
+                            <field name="environment"/>
+                            <field name="is_default"/>
+                            <field name="active"/>
+                            <field name="sequence"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group string="URL Base">
+                            <field name="base_url" placeholder="https://mi-empresa.odoo.com"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Endpoints Locales" name="local_endpoints">
+                            <group string="Endpoints que exponemos (para recibir callbacks)">
+                                <group>
+                                    <field name="endpoint_recepcion"/>
+                                    <field name="endpoint_aprobacion"/>
+                                </group>
+                                <group>
+                                    <field name="endpoint_semilla"/>
+                                    <field name="endpoint_validacion"/>
+                                </group>
+                            </group>
+                            <group string="URLs Completas (calculadas)">
+                                <group>
+                                    <field name="url_recepcion_full" readonly="1"/>
+                                    <field name="url_aprobacion_full" readonly="1"/>
+                                </group>
+                                <group>
+                                    <field name="url_semilla_full" readonly="1"/>
+                                    <field name="url_validacion_full" readonly="1"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page string="URLs DGII" name="dgii_urls">
+                            <group string="URLs de DGII (para enviar a DGII)">
+                                <group>
+                                    <field name="dgii_url_recepcion"/>
+                                    <field name="dgii_url_aprobacion"/>
+                                </group>
+                                <group>
+                                    <field name="dgii_url_semilla"/>
+                                    <field name="dgii_url_validacion"/>
+                                </group>
+                            </group>
+                            <div class="alert alert-info" role="alert">
+                                <strong>Nota:</strong> Puede cargar las URLs oficiales de DGII usando el botón "Cargar URLs DGII" según el ambiente seleccionado.
+                            </div>
+                        </page>
+
+                        <page string="API Microservicio" name="api_config">
+                            <group string="Configuración del Microservicio API">
+                                <group>
+                                    <field name="api_base_url" placeholder="https://tu-api.com/api"/>
+                                    <field name="api_key" password="True"/>
+                                </group>
+                                <group>
+                                    <field name="api_environment"/>
+                                    <field name="company_rnc" placeholder="RNC de la compañía"/>
+                                </group>
+                            </group>
+                            <div class="alert alert-info" role="alert">
+                                <strong>Microservicio API:</strong> Cuando se recibe un e-CF de DGII, el sistema envía automáticamente una aprobación comercial al microservicio API, que genera el XML firmado y lo envía a DGII.
+                                <br/><br/>
+                                <strong>Ejemplo de llamada:</strong>
+                                <pre>POST {api_base_url}/invoice/approval
+Headers: x-api-key: {api_key}
+Body: {"approvalData": {...}, "fileName": "...", "rnc": "...", "environment": "..."}</pre>
+                            </div>
+                        </page>
+
+                        <page string="Seguridad" name="security">
+                            <group string="Rate Limiting">
+                                <group>
+                                    <field name="enable_rate_limit"/>
+                                    <field name="rate_limit_requests" invisible="not enable_rate_limit"/>
+                                    <field name="rate_limit_burst" invisible="not enable_rate_limit"/>
+                                </group>
+                            </group>
+                            <group string="Whitelist de IPs">
+                                <group>
+                                    <field name="enable_ip_whitelist"/>
+                                </group>
+                                <group invisible="not enable_ip_whitelist">
+                                    <field name="allowed_ips" placeholder="192.168.1.100&#10;10.0.0.0/8"/>
+                                </group>
+                            </group>
+                            <group string="IPs de DGII">
+                                <field name="dgii_ips" nolabel="1" placeholder="IPs conocidas de servidores DGII"/>
+                            </group>
+                            <group string="Verificación">
+                                <group>
+                                    <field name="verify_client_cert"/>
+                                    <field name="verify_xml_signature"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page string="Procesamiento" name="processing">
+                            <group string="Modo de Procesamiento">
+                                <group>
+                                    <field name="async_processing"/>
+                                    <field name="queue_channel" invisible="not async_processing"/>
+                                </group>
+                            </group>
+                            <group string="Tiempos">
+                                <group>
+                                    <field name="response_timeout"/>
+                                    <field name="processing_timeout"/>
+                                </group>
+                            </group>
+                            <group string="Reintentos">
+                                <group>
+                                    <field name="max_retries"/>
+                                    <field name="retry_delay"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page string="Logging" name="logging">
+                            <group>
+                                <group>
+                                    <field name="log_level"/>
+                                    <field name="log_retention_days"/>
+                                </group>
+                            </group>
+                            <div class="alert alert-warning" role="alert">
+                                <strong>Advertencia:</strong> El nivel de log "Debug" puede generar un gran volumen de datos al incluir payloads completos. Use con precaución en producción.
+                            </div>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="dgii_callback_config_view_search" model="ir.ui.view">
+        <field name="name">dgii.callback.config.view.search</field>
+        <field name="model">dgii.callback.config</field>
+        <field name="arch" type="xml">
+            <search string="Buscar Configuraciones">
+                <field name="name"/>
+                <field name="environment"/>
+                <separator/>
+                <filter string="Local" name="filter_local" domain="[('environment', '=', 'local')]"/>
+                <filter string="Pre-certificación" name="filter_precert" domain="[('environment', '=', 'precert')]"/>
+                <filter string="Producción" name="filter_prod" domain="[('environment', '=', 'prod')]"/>
+                <separator/>
+                <filter string="Predeterminados" name="filter_default" domain="[('is_default', '=', True)]"/>
+                <filter string="Activos" name="filter_active" domain="[('active', '=', True)]"/>
+                <separator/>
+                <filter string="Ambiente" name="groupby_env" context="{'group_by': 'environment'}"/>
+                <filter string="Compañía" name="groupby_company" context="{'group_by': 'company_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_dgii_callback_config" model="ir.actions.act_window">
+        <field name="name">Configuración de Callbacks</field>
+        <field name="res_model">dgii.callback.config</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="dgii_callback_config_view_search"/>
+        <field name="context">{'search_default_filter_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configure los parámetros de callback DGII
+            </p>
+            <p>
+                Cree configuraciones para diferentes ambientes:
+                <ul>
+                    <li><strong>Local:</strong> Para desarrollo y pruebas internas</li>
+                    <li><strong>Pre-certificación:</strong> Para pruebas con DGII</li>
+                    <li><strong>Producción:</strong> Para operación real</li>
+                </ul>
+            </p>
+            <p>
+                Cada configuración permite definir:
+                <ul>
+                    <li>URLs de endpoints</li>
+                    <li>Rate limiting y whitelist de IPs</li>
+                    <li>Procesamiento síncrono o asíncrono</li>
+                    <li>Niveles de logging</li>
+                </ul>
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Items -->
+    <menuitem
+        id="menu_dgii_callback_config"
+        name="Configuración"
+        parent="menu_dgii_callbacks"
+        action="action_dgii_callback_config"
+        sequence="30"/>
+
+</odoo>
