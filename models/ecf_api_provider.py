@@ -833,17 +833,18 @@ class EcfApiProvider(models.Model):
         """Envía documento a API personalizada (mismo que local por ahora)"""
         return self._send_local(ecf_json, rnc, encf, use_summary=use_summary)
 
-    def send_acecf(self, acecf_json, origin='acecf_case', acecf_case_id=None):
+    def send_acecf(self, acecf_json, origin='acecf_case', acecf_case_id=None, environment='cert'):
         """
         Envia una Aprobacion Comercial e-CF (ACECF) a la API.
 
         Usa la misma configuracion del proveedor (URL base, API key, etc.)
-        pero envia al endpoint /api/invoice/acecf con formato plano.
+        y envia al endpoint /api/invoice/approval con formato anidado.
 
         Args:
             acecf_json: dict con estructura ACECF o campos planos
             origin: origen del envio
             acecf_case_id: ID del caso ACECF
+            environment: ambiente de DGII ('test', 'cert', 'prod')
 
         Returns:
             tuple: (success, response_data, track_id, error_message, raw_response, signed_xml)
@@ -858,41 +859,61 @@ class EcfApiProvider(models.Model):
         else:
             detalle = acecf_json
 
-        # Construir payload en formato plano que espera la API
-        payload = {
-            'rncEmisor': detalle.get('RNCEmisor'),
+        # Construir estructura ACECF completa para approvalData
+        acecf_detalle = {
+            'Version': detalle.get('Version') or '1.0',
+            'RNCEmisor': detalle.get('RNCEmisor'),
             'eNCF': detalle.get('eNCF'),
-            'fechaEmision': detalle.get('FechaEmision'),
-            'montoTotal': detalle.get('MontoTotal'),
-            'rncComprador': detalle.get('RNCComprador'),
-            'estado': detalle.get('Estado'),
+            'FechaEmision': detalle.get('FechaEmision'),
+            'MontoTotal': str(detalle.get('MontoTotal')) if detalle.get('MontoTotal') else None,
+            'RNCComprador': detalle.get('RNCComprador'),
+            'Estado': int(detalle.get('Estado')) if detalle.get('Estado') else 1,
         }
 
         # Campos opcionales
         if detalle.get('FechaHoraAprobacionComercial'):
-            payload['fechaHoraAprobacionComercial'] = detalle.get('FechaHoraAprobacionComercial')
+            acecf_detalle['FechaHoraAprobacionComercial'] = detalle.get('FechaHoraAprobacionComercial')
         if detalle.get('DetalleMotivoRechazo'):
-            payload['detalleMotivoRechazo'] = detalle.get('DetalleMotivoRechazo')
+            acecf_detalle['DetalleMotivoRechazo'] = detalle.get('DetalleMotivoRechazo')
 
-        rnc = payload.get('rncEmisor')
-        encf = payload.get('eNCF')
+        # Limpiar valores None del detalle
+        acecf_detalle = {k: v for k, v in acecf_detalle.items() if v is not None}
+
+        rnc_comprador = acecf_detalle.get('RNCComprador')
+        encf = acecf_detalle.get('eNCF')
+
+        # Construir fileName: RNCComprador + eNCF + .xml
+        file_name = f"{rnc_comprador}{encf}.xml" if rnc_comprador and encf else None
+
+        # Construir payload en formato anidado que espera /api/invoice/approval
+        payload = {
+            'approvalData': {
+                'ACECF': {
+                    'DetalleAprobacionComercial': acecf_detalle
+                }
+            },
+            'fileName': file_name,
+            'rnc': rnc_comprador,
+            'environment': environment
+        }
+
+        rnc = acecf_detalle.get('RNCEmisor')
 
         # Construir URL ACECF basada en la configuracion del proveedor
         # Usa api_url_acecf si esta configurado, sino deriva de api_url
         if self.api_url_acecf:
             acecf_url = self.api_url_acecf.strip()
         elif self.api_url:
-            # Extraer URL base y agregar endpoint ACECF
-            # Ejemplo: https://joy.miapprd.com/api/invoice/send -> https://joy.miapprd.com/api/invoice/acecf
+            # Extraer URL base y agregar endpoint /api/invoice/approval
             base_url = self.api_url.strip().rstrip('/')
             # Buscar /api/ en la URL para construir el endpoint correcto
             if '/api/' in base_url:
                 api_base = base_url.split('/api/')[0]
-                acecf_url = f"{api_base}/api/invoice/acecf"
+                acecf_url = f"{api_base}/api/invoice/approval"
             else:
                 # Fallback: reemplazar ultimo segmento
                 parts = base_url.rsplit('/', 1)
-                acecf_url = f"{parts[0]}/acecf" if len(parts) == 2 else f"{base_url}/acecf"
+                acecf_url = f"{parts[0]}/approval" if len(parts) == 2 else f"{base_url}/approval"
         else:
             return False, None, None, "URL de API no configurada en el proveedor", None, None
 
